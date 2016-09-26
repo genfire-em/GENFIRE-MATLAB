@@ -1,0 +1,71 @@
+***Release Notes GENFIRE***
+
+v1.0 - Welcome to GENFIRE
+
+v1.1- Updated automatic resolution cutoff finder to use a backprojection Fourier shell correlation method
+     - Fourier shell correlation (and some other functions) now capable of handing noncubic arrays
+     - Fixed a bug in weightVals.cpp that was preventing Friedel mates from being exact complex conjugates
+     - Added phase retrieval capabilities following the methods of Oversampling Smoothness (OSS) (Rodriguez et al. 2013) in the function GENFIRE_OSS.m
+       The implementation in GENFIRE allows for the enforcement of complex values at low resolution and phase retrieval on pure magnitude values at higher resolution
+       This is useful because in some cases the magnitude information may be useful to a higher resolution than the complex values, so the phases can be refined.
+     - Added option to reconstruct from a pre-assembled Fourier grid in the function GENFIRE_Main_MRI.m
+
+v1.2 - Added option to switch Euler angle and coordinate convention to the one used by RELION/XMIPP/SPIDER
+
+v1.3 - Optimization in fillInFourierGrid and fillInFourierGrid_C resulting in ~4x speed increase for fillInFourierGrid_C
+
+v1.35 - Constraint enforcement by correlation extension/suppression method
+
+v1.36 - Converted coordinate system / Euler angle convention to the ones used in other common single-particle packages such as RELION, XMIPP, SPIDER, and FREALIGN detailed here: http://www.ebi.ac.uk/msd/3dem/Belnap/paper/JSB_v151p196.pdf
+        This includes changes to the following functions:
+                -fillInFourierGrid_C
+                -fillInFourierGrid
+                -calculate3Dprojection_interp
+                -calculate3Dprojection
+                -GENFIRE_Main
+        NOTE: This means that using projections that were calculated with older versions of calculate3Dprojection_interp or calculate3Dprojection for reconstruction with versions of GENFIRE v1.36 or later
+              will not reconstruct correctly because the angles will not match the projections.
+      -  Some features have been added in and others outdated over many revisions of GENFIRE so I did miscellaneous code cleanup/commenting/renaming for clarity.
+
+v1.37 - Altered the way data is weighted and enforced. The measured data points are enforced via resolution extension. In early iterations, only the lowest frequency points
+        are enforced, and the resolution cutoff is expanded until all information is enforced. The process is then run in reverse by contracting the cutoff until at final iteration
+        only the lowest resolution is being enforced again. This allows high resolution information to exist but gives priority to values enforced by less noisy, low resolution datapoints.
+        There is an initial reconstruction of this format, then the reconstruction is backprojected and compared via FRC to the input projections. These correlation values are used as weights
+        and on the second reconstruction the constraints are multiplied by a weighting matrix derived from these FRC coefficients. The process of delayed enforcement by resolution extension/suppression
+        is still the same for the second reconstruction -- the correlation weighting just provides a way of discriminating between good and back projections.
+       
+
+v1.38 - Confidence weighting is now included as part of the weighted averaging for the interpolation process when filling in the Fourier grid of constraints.
+        Previously the confidence weights were used only as a filter for the projections, but this is not sufficient. For example, if you have two values matched
+        to a single grid point, one of which is a very good value and one that is very bad, then with the previous method the gridded value would be intermediate
+        between the two, and then an intermediate confidence weighting would be applied. In reality what one should do here is make the gridded value be biased towards
+        the value with higher confidence, and this is now how the algorithm works. The weight factors are themselves weighted by the confidence factors. The overall weighting
+        scales linearly with inverse distance and also linearly with confidence. So if you have two measured values near the same grid point, and one of them is twice as far away,
+        but its confidence weighting is twice as large, then the two values will have equal weight for the final gridded value. It is still necessary to construct the
+        weighted array of confidence weights for use to filter the constraints for the correlation extension/suppression step.
+        
+        Ultimately, the reconstruction process is as follows. Initially use 100% confidence for all values, and grid them according to inverse distance weighted average. Reconstruct
+        by enforcing these constraints with a delay based on resolution extension/suppression (enforce low resolution information at early resolutions and expand the sphere of enforcement
+        until all data are being enforced, then reverse the process until you are again only enforcing low resolution during final iterations). Then take this reconstruction and backproject
+        it to all of the angles for projections that were inputted. Compute FRC between backprojection and input projection, and then these FRC coefficients are used as confidence weights.
+        Reassemble the Fourier Grid, this time with the FRC coefficients as confidence weights in addition to inverse distance. Construct a constraint filter which is the 
+        inverse distance + confidence weighted average of the confidence weights themselves. In general this will be some sort of anisotropic low pass filter that suppresses datapoints which 
+        were not well-correlated with the initial reconstruction.
+
+v1.41 - CTF correction, phase tolerance constraint for gridding. CTF amplitude minima throwout for gridding
+
+v1.5 - Updated MRI and OSS codes. Further optimization of fillInFourierGrid (memory allocation optimization). GENFIRE_SP_Hoff.m provides a way for reconstructing from extremely
+large datasets where it is not practical to load all of the projections in at once. Projections must be divided into stacks with the naming format "projections#.mat" where 
+# = 1,2,3, etc with no leading 0's. Angles should be saved in similar stacks called "angles#.mat". You then input the filename to the directory containing these files and each
+stack will be added to the Fourier grid consecutively. Calculate3Dprojection_interp now calculates projections by linear interpolation
+of central Fourier slice. This is extremely fast, but less accurate than using DFT. For checking angular alignments the low resolution information dominates, so as an example for doing this
+one could just use the fast way. If you need very accurate projections, then of course DFT is better if you can invest the time. Use what is appropriate. In this version I have 
+deactivated the Fourier backprojection and reweighting, as I have found resolution extension and suppression performs as good or better, and does not require the computation time of
+backprojection.
+
+v1.6 - Initial public version of GENFIRE. I extensively cleaned/commented the code for distribution, including a complete reformatting of the interface in GENFIRE_Main.m. Reconstructions are now performed
+by passing a parameter structure to the GENFIRE_reconstruct, which allows for much neater implementations of things like FSC between independent reconstructions than was the case previously. The functionality
+of the algorithm is unchanged.
+
+
+       

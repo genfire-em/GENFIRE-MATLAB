@@ -1,0 +1,18 @@
+There are two versions of the gridding function, "fillinFourierGrid" and "fillinFourierGrid_C". The one tagged
+with _C is faster uses the MEX function "weightVals.cpp". To use it, you must first have a C++ compiler installed such as Microsoft Visual Studio
+for Windows, or g++ on MAC/Linux. If you are not familiar with how setting up a compiler or mex works, don't be afraid -- it's really easy!
+Most computer setups only require you to download/install the compiler and MATLAB will automatically detect it. You may need to enter the command    mex -setup
+MEX stands for MATLAB EXecuteable, and it takes functions written in other langauges like C/C++ (which are generally much faster than MATLAB code)
+and converts them into something that can be read by MATLAB.
+Once you have this setup in order to use this function you must compile it in MATLAB with the following command:
+
+mex weightVals.cpp 
+
+
+If you get a success message, you should then be able to use "fillinFourierGrid_C" just like "fillinFourierGrid"
+If for some reason compiling fails and you are unable to troubleshoot why mex is not working,
+you can just use "fillinFourierGrid" by changing the variable "griddingMethod" in GENFIRE_Main.m. It does the same thing, but is slower.
+You can swap between methods by changing the parameter griddingMethod in GENFIRE_Main. I have tested and the function
+weightVals.cpp correctly compiles and runs of 64 bit Windows, 64 bit Mac OSX 10, and the version of Linux run on Hoffman2
+
+After that, run reconstructions with GENFIRE_Main.m or one of the specialized versions
