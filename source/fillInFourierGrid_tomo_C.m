@@ -195,9 +195,9 @@ confidenceWeights = zeros(dim1,dim2,size(kMeasured,3),'single');
 
 % for projNum = 1:size(projections,3);
 for projNum = 1:size(kMeasured,3);
-phi = angles(1,projNum);
-theta = angles(2,projNum);
-psi = angles(3,projNum);
+phi = angles(projNum,1);
+theta = angles(projNum,2);
+psi = angles(projNum,3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

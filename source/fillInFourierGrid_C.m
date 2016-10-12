@@ -33,7 +33,7 @@
 
 
 
-function [rec, measuredK, constraintConfidenceWeights, weightedDistances, sigmaPhases] = fillInFourierGrid_C(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection,CTFparameters)
+function [rec, measuredK, constraintConfidenceWeights] = fillInFourierGrid_C(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection,CTFparameters)
 
 %create empty CTF parameters if not doing CTF correction
 if ~doCTFcorrection
@@ -151,10 +151,10 @@ measuredY = zeros(1,size(kMeasured,2)*size(kMeasured,1),size(kMeasured,3),'singl
 measuredZ = zeros(1,size(kMeasured,2)*size(kMeasured,1),size(kMeasured,3),'single');
 
 %initialize arrays
-measuredK = zeros(dim1,dim1,dim1,'single');
-constraintConfidenceWeights = zeros(dim1,dim1,dim1,'single');
+% measuredK = zeros(dim1,dim1,dim1,'single');
+% constraintConfidenceWeights = zeros(dim1,dim1,dim1,'single');
 
-confidenceWeights = zeros(dim1,dim1,size(kMeasured,3),'single');
+% confidenceWeights = zeros(dim1,dim1,size(kMeasured,3),'single');
 
 for projNum = 1:size(kMeasured,3);
 phi = angles(projNum,1);
@@ -170,10 +170,10 @@ R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)
       sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
 
 rotkCoords = R'*[kx;ky;kz];%rotate coordinates
-currentConfidenceWeights = zeros(size(Q));
-currentConfidenceWeights(:) = interp1(linspace(0,1+1e-10,size(confidenceWeightVector,2)),confidenceWeightVector(projNum,:),Q(:),'linear');%make confidence map
-currentConfidenceWeights(isnan(currentConfidenceWeights))=0;%extrapolated values will be NaN and are outside the resolution circle anyway
-confidenceWeights(:,:,projNum) = currentConfidenceWeights;
+% currentConfidenceWeights = zeros(size(Q));
+% currentConfidenceWeights(:) = interp1(linspace(0,1+1e-10,size(confidenceWeightVector,2)),confidenceWeightVector(projNum,:),Q(:),'linear');%make confidence map
+% currentConfidenceWeights(isnan(currentConfidenceWeights))=0;%extrapolated values will be NaN and are outside the resolution circle anyway
+% confidenceWeights(:,:,projNum) = currentConfidenceWeights;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 measuredX(:,:,projNum) = rotkCoords(1,:);%rotated X
@@ -186,18 +186,18 @@ measuredX = reshape(measuredX,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasur
 measuredY = reshape(measuredY,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
 measuredZ = reshape(measuredZ,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
 kMeasured = reshape(kMeasured,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
-confidenceWeights = reshape(confidenceWeights,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
+% confidenceWeights = reshape(confidenceWeights,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
 badInd = find(kMeasured==-999);%delete values that are flagged as bad
 measuredX(badInd) = [];
 measuredY(badInd) = [];
 measuredZ(badInd) = [];
 kMeasured(badInd) = [];
-confidenceWeights(badInd) = [];
+% confidenceWeights(badInd) = [];
 
 masterInd = [];%masterInd will be a large list of the grid indices
 masterVals = [];%complex values to include in weighted averaging for those grid points
 masterDistances = [];%distance from measured value to grid point
-masterConfidenceWeights = [];
+% masterConfidenceWeights = [];
 
 %shiftMax = round(interpolationCutoffDistance);
 shiftMax = 0;
@@ -216,7 +216,7 @@ for Yshift = -shiftMax:shiftMax
             tmpY = (round(measuredY)+Yshift);
             tmpZ = (round(measuredZ)+Zshift);
             tmpVals = kMeasured;
-            tmpConfidenceWeights = confidenceWeights;
+%             tmpConfidenceWeights = confidenceWeights;
             distances = sqrt(abs(measuredX-tmpX).^2+abs(measuredY-tmpY).^2+abs(measuredZ-tmpZ).^2); %compute distance to nearest voxel
             tmpY = tmpY+nc; %shift origin
             tmpZ = tmpZ+nc;
@@ -230,7 +230,7 @@ for Yshift = -shiftMax:shiftMax
             masterInd = [masterInd sub2ind([dim1 dim1 dim1],tmpX(goodInd),tmpY(goodInd),tmpZ(goodInd))]; %append values to lists
             masterVals = [masterVals tmpVals(goodInd)];
             masterDistances = [masterDistances distances(goodInd)];
-            masterConfidenceWeights = [masterConfidenceWeights tmpConfidenceWeights(goodInd)];
+%             masterConfidenceWeights = [masterConfidenceWeights tmpConfidenceWeights(goodInd)];
 
        end
    end
@@ -250,49 +250,62 @@ clear confidenceWeights
 % and then find the unique values by looking at the difference in
 % consecutive elements. 
 
-[masterInd sortInd] = sort(masterInd);%sort lists by voxel index
-masterVals = masterVals(sortInd);
-masterDistances = masterDistances(sortInd);
-masterConfidenceWeights = masterConfidenceWeights(sortInd);
+% [masterInd sortInd] = sort(masterInd);%sort lists by voxel index
+% masterVals = masterVals(sortInd);
+% masterDistances = masterDistances(sortInd);
+% masterConfidenceWeights = masterConfidenceWeights(sortInd);
+masterDistances = masterDistances + 1e-5;
+masterDistances(masterDistances>0) = 1 ./ masterDistances(masterDistances>0);
+masterDistances(isnan(masterDistances)) = 0;
 
-[uniqueVals uniqueInd] = unique(masterInd);%find non repeating values
+measuredK = accumarray(masterInd',masterVals.*masterDistances,[dim1^3 1]);
+sumWeights = accumarray(masterInd',masterDistances,[dim1^3 1]);
+measuredK(sumWeights>0) = measuredK(sumWeights>0) ./ sumWeights(sumWeights>0);
+measuredK = reshape(measuredK,[dim1 dim1 dim1]);
 
-uniqueInd(end+1) = length(masterInd)+1; %this is just a placeholder value
-diffVec = diff(uniqueInd); %find the transition indices
-singleInd = find(diffVec==1); %if a voxel was only matched once, we don't
-%need to bother computing the weighted average, as the weight will just be
-%1. This saves computation time, and this scenario happens frequently, i.e.
-%at high spatial frequencies in tomography data the datapoints are quite
-%isolated.
-multiInd = find(diffVec~=1); %these are voxels that are matched multiple times
-constraintConfidenceWeights(uniqueVals(singleInd)) = masterConfidenceWeights(uniqueInd(singleInd));
-measuredK(uniqueVals(singleInd)) = masterVals(uniqueInd(singleInd)).*constraintConfidenceWeights(uniqueVals(singleInd));
-if nargout>3
-    weightedDistances = zeros(size(measuredK),'single');
-    weightedDistances(uniqueVals(singleInd)) = (masterDistances(uniqueInd(singleInd))+1e-30).*constraintConfidenceWeights(uniqueVals(singleInd)); 
-end
-if nargout > 4
-   sigmaPhases = zeros(size(measuredK),'single'); 
-end
 
-%now loop over the lists of values, and for each grid point compute the
-%inverse distance normalized weighted average of all points matched to it
-[weightedMagnitudes, RealValues, ComplexValues,weightedConfidenceWeights,weightedDistances_toAppend, sigmaPhaseVals] = weightVals(double(multiInd'),double(masterDistances),double(masterVals),double(uniqueInd),double(masterConfidenceWeights));
 
-% % %the result used is the weight average of the magnitudes combined with the 
-% % %phase angle from the weight average of the complex values. This preserves
-% % %magnitude information in the presence of noise
-% % % weightedPhases = angle((RealValues+1i*ComplexValues));
-% % % measuredK(masterInd(uniqueInd(multiInd))) = weightedMagnitudes.*exp(1*1i*weightedPhases);
-measuredK(masterInd(uniqueInd(multiInd))) = RealValues + 1j*ComplexValues;
-constraintConfidenceWeights(masterInd(uniqueInd(multiInd))) = weightedConfidenceWeights;
-constraintConfidenceWeights(isnan(constraintConfidenceWeights))=0;
-if nargout>3
-    weightedDistances(masterInd(uniqueInd(multiInd))) = weightedDistances_toAppend; 
-end
-if nargout>4
-   sigmaPhases(masterInd(uniqueInd(multiInd))) = sigmaPhaseVals;
-end
+% sumWeightedK = accumarray(masterInd,masterVals.*masterDistances,[measuredKsize 1]);
+
+
+% [uniqueVals uniqueInd] = unique(masterInd);%find non repeating values
+% 
+% uniqueInd(end+1) = length(masterInd)+1; %this is just a placeholder value
+% diffVec = diff(uniqueInd); %find the transition indices
+% singleInd = find(diffVec==1); %if a voxel was only matched once, we don't
+% %need to bother computing the weighted average, as the weight will just be
+% %1. This saves computation time, and this scenario happens frequently, i.e.
+% %at high spatial frequencies in tomography data the datapoints are quite
+% %isolated.
+% multiInd = find(diffVec~=1); %these are voxels that are matched multiple times
+% constraintConfidenceWeights(uniqueVals(singleInd)) = masterConfidenceWeights(uniqueInd(singleInd));
+% measuredK(uniqueVals(singleInd)) = masterVals(uniqueInd(singleInd)).*constraintConfidenceWeights(uniqueVals(singleInd));
+% if nargout>3
+%     weightedDistances = zeros(size(measuredK),'single');
+%     weightedDistances(uniqueVals(singleInd)) = (masterDistances(uniqueInd(singleInd))+1e-30).*constraintConfidenceWeights(uniqueVals(singleInd)); 
+% end
+% if nargout > 4
+%    sigmaPhases = zeros(size(measuredK),'single'); 
+% end
+% 
+% %now loop over the lists of values, and for each grid point compute the
+% %inverse distance normalized weighted average of all points matched to it
+% [weightedMagnitudes, RealValues, ComplexValues,weightedConfidenceWeights,weightedDistances_toAppend, sigmaPhaseVals] = weightVals(double(multiInd'),double(masterDistances),double(masterVals),double(uniqueInd),double(masterConfidenceWeights));
+% 
+% % % %the result used is the weight average of the magnitudes combined with the 
+% % % %phase angle from the weight average of the complex values. This preserves
+% % % %magnitude information in the presence of noise
+% % % % weightedPhases = angle((RealValues+1i*ComplexValues));
+% % % % measuredK(masterInd(uniqueInd(multiInd))) = weightedMagnitudes.*exp(1*1i*weightedPhases);
+% measuredK(masterInd(uniqueInd(multiInd))) = RealValues + 1j*ComplexValues;
+% constraintConfidenceWeights(masterInd(uniqueInd(multiInd))) = weightedConfidenceWeights;
+% constraintConfidenceWeights(isnan(constraintConfidenceWeights))=0;
+% if nargout>3
+%     weightedDistances(masterInd(uniqueInd(multiInd))) = weightedDistances_toAppend; 
+% end
+% if nargout>4
+%    sigmaPhases(masterInd(uniqueInd(multiInd))) = sigmaPhaseVals;
+% end
 rec = real(my_ifft(measuredK));
 timeTakenToFillInGrid = toc;
 timeTakenToFillInGrid = round(10*timeTakenToFillInGrid)./10;

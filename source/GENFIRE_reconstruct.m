@@ -17,7 +17,11 @@ numBinsRfree = GENFIRE_parameters.numBinsRfree;
 doCTFcorrection = GENFIRE_parameters.doCTFcorrection;
 griddingMethod = GENFIRE_parameters.griddingMethod;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
-
+if isfield(GENFIRE_parameters,'enforce_support')
+    enforce_support = GENFIRE_parameters.enforce_support;
+else
+    enforce_support = 1;
+end
 %%%   Begin Reconstruction   %%%
 angles = single(importdata(filename_Angles));
 projections = single(importdata(filename_Projections));
@@ -66,7 +70,7 @@ end
 if size(angles,2)>3
     error('The dimension of the angles is incorrect.')
 end
-if size(angles,1) ==1 
+if size(angles,2) ==1 
 angles = [zeros(1,length(angles)),  angles, zeros(1,length(angles))];%tomography tilt is the theta angle
 end
 
@@ -84,9 +88,9 @@ confidenceWeightVector =  ones(size(projections,3),numBins); %this is to weight 
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 switch griddingMethod
     case 1
-        [recIFFT measuredK,constraintConfidenceWeights,weightedDistances, sigmaPhases] = fillInFourierGrid_C(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
+        [recIFFT measuredK] = fillInFourierGrid_C(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
     case 2
-        [recIFFT, measuredK,constraintConfidenceWeights,weightedDistances] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
+        [recIFFT, measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
     case 3
         ori_projections = single(importdata(filename_Projections)); ori_projections = ori_projections(:,:,1:10);
         Typeind = 2;
@@ -126,9 +130,9 @@ end
 fprintf('GENFIRE: Reconstructing... \n\n');
 
 if isempty(initialObject)
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex);   
+    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, enforce_support);   
 else
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex);
+    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, enforce_support);
 end
 
 reconstructionTime = toc;

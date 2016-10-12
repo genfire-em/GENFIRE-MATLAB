@@ -1,4 +1,4 @@
-function GENFIRE_reconstruct(GENFIRE_parameters)
+function GENFIRE_reconstruct_subsection(GENFIRE_parameters)
 
 %unpack reconstruction parameters
 filename_Projections = GENFIRE_parameters.filename_Projections;
@@ -17,12 +17,17 @@ numBinsRfree = GENFIRE_parameters.numBinsRfree;
 doCTFcorrection = GENFIRE_parameters.doCTFcorrection;
 griddingMethod = GENFIRE_parameters.griddingMethod;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
-projectionBottom = GENFIRE_parameters.projectionBottom;
-projectionTopIncrement = GENFIRE_parameters.projectionTopIncrement;
+projectionStart = GENFIRE_parameters.start;
+projectionStop = GENFIRE_parameters.stop;
 %%%   Begin Reconstruction   %%%
 angles = single(importdata(filename_Angles));%casting to single saves memory
 projections = single(importdata(filename_Projections));
-projections = projections(:,projectionBottom:projectionBottom+projectionTopIncrement,:);
+if ~ischar(projectionStart)
+    projections = projections(:,projectionStart:projectionStop);
+else
+    projectionStart = 1;
+    projectionStop = size(projections,2);
+end
 
 if griddingMethod==3
    error('GENFIRE: DFT gridding currently not supported in v1.6, update in near future. Change griddingMethod to 1 or 2.') 
@@ -37,7 +42,7 @@ end
 
 global support %make support variable globally accessable to avoid passing copies of large arrays around to different functions
 support = single(importdata(filename_Support));
-support = support(:,projectionBottom:projectionBottom+projectionTopIncrement,:);
+support = support(:,projectionStart:projectionStop,:);
 vecX = 1:size(support,1); ncX = round((size(support,1)+1)/2); vecX = vecX - ncX;
 vecY = 1:size(support,2); ncY = round((size(support,2)+1)/2); vecY = vecY - ncY;
 vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
@@ -61,11 +66,11 @@ end
 
 %If there is only one tilt angle (such as in tomography), fill in other
 %Euler angles with zeros
-if size(angles,1)>3
+if size(angles,2)>3
     error('The dimension of the angles is incorrect.')
 end
 if size(angles,1) ==1 
-angles = [zeros(1,length(angles));angles;zeros(1,length(angles))];%tomography tilt is the theta angle
+angles = [zeros(1,length(angles));angles;zeros(1,length(angles))]';%tomography tilt is the theta angle
 end
 
 

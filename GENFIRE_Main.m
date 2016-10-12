@@ -42,7 +42,7 @@ filename_Results = './results/GENFIRE_rec.mat';
 
 
 global numIterations 
-numIterations = 100; 
+numIterations = 50; 
 
 global pixelSize
 pixelSize = .5; 
@@ -55,7 +55,7 @@ griddingMethod = 1; %% 1) Use fastest FFT method with mex-compiled function weig
 interpolationCutoffDistance =.7; %%radius of sphere (in pixels) within which to include measured datapoints 
 %%when assembling the 3D Fourier grid
 
-ComputeFourierShellCorrelation = 0; %%set to 1 to divide dataset in half, independently reconstruct, and compute Fourier Shell Correlation (FSC) between two halves.
+ComputeFourierShellCorrelation = 1; %%set to 1 to divide dataset in half, independently reconstruct, and compute Fourier Shell Correlation (FSC) between two halves.
 
 numBins = 50; %number of bins for FRC averaging
 %% If you do not need FRC, set ComputeFourierShellCorrelation to 0 for speed as the FRC calculation requires reconstructing everything twice
@@ -129,11 +129,11 @@ if ComputeFourierShellCorrelation
     fprintf('GENFIRE: Dividing datasets in half for FSC calculation...\n\n')
     projections = single(importdata(GENFIRE_parameters.filename_Projections));
     angles = single(importdata(GENFIRE_parameters.filename_Angles));
-    if size(angles,1)>3
+    if size(angles,2)>3
         error('The dimension of the angles is incorrect.\n\n')
     end
-    if size(angles,1) ==1 
-        angles = [zeros(1,length(angles));angles;zeros(1,length(angles))];%tomography tilt is the theta angle
+    if size(angles,2) ==1 
+        angles = [zeros(1,length(angles));angles;zeros(1,length(angles))]';%tomography tilt is the theta angle
     end
     %make sure the size of the projections is sufficient to divide in half
     if size(projections,3) < 2
@@ -143,39 +143,43 @@ if ComputeFourierShellCorrelation
     %divide dataset in half
     pj1 = projections(:,:,1:2:end);
     pj2 = projections(:,:,2:2:end);
-    angles1 = angles(:,1:2:end);
-    angles2 = angles(:,2:2:end);
-
+    angles1 = angles(1:2:end,:);
+    angles2 = angles(2:2:end,:);
+    
+    if ~isdir('tmp')
+        mkdir tmp
+    end
     %save projections (temporarily)
-    save('projections_half_1.mat','pj1')
-    save('projections_half_2.mat','pj2')
-    save('angles_half_1.mat','angles1')
-    save('angles_half_2.mat','angles2')
+    save('tmp/projections_half_1.mat','pj1')
+    save('tmp/projections_half_2.mat','pj2')
+    save('tmp/angles_half_1.mat','angles1')
+    save('tmp/angles_half_2.mat','angles2')
     
     GENFIRE_parameters_half1 = GENFIRE_parameters;
     GENFIRE_parameters_half2 = GENFIRE_parameters;
-    GENFIRE_parameters_half1.filename_Projections = 'projections_half_1.mat';
-    GENFIRE_parameters_half2.filename_Projections = 'projections_half_2.mat';
-    GENFIRE_parameters_half1.filename_Angles = 'angles_half_1.mat';
-    GENFIRE_parameters_half2.filename_Angles = 'angles_half_2.mat';
-    GENFIRE_parameters_half1.filename_Results = 'results_half_1.mat';
-    GENFIRE_parameters_half2.filename_Results = 'results_half_2.mat';
+    GENFIRE_parameters_half1.filename_Projections = 'tmp/projections_half_1.mat';
+    GENFIRE_parameters_half2.filename_Projections = 'tmp/projections_half_2.mat';
+    GENFIRE_parameters_half1.filename_Angles = 'tmp/angles_half_1.mat';
+    GENFIRE_parameters_half2.filename_Angles = 'tmp/angles_half_2.mat';
+    GENFIRE_parameters_half1.filename_Results = 'tmp/results_half_1.mat';
+    GENFIRE_parameters_half2.filename_Results = 'tmp/results_half_2.mat';
     %reconstruct halves individually
     fprintf('GENFIRE: Reconstructing first half...\n\n')
     GENFIRE_reconstruct(GENFIRE_parameters_half1)
     fprintf('GENFIRE: Reconstructing second half...\n\n')
     GENFIRE_reconstruct(GENFIRE_parameters_half2)
-    GENFIRE_parameters_half1 = importdata('results_half_1.mat');
-    GENFIRE_parameters_half2 = importdata('results_half_2.mat');
+    GENFIRE_parameters_half1 = importdata('tmp/results_half_1.mat');
+    GENFIRE_parameters_half2 = importdata('tmp/results_half_2.mat');
     fprintf('GENFIRE: Independent reconstructions complete. Calculating FSC.\n\n')
     [FSC, spatialFrequency] = FourierShellCorrelate(GENFIRE_parameters_half1.reconstruction, GENFIRE_parameters_half2.reconstruction,numBins,pixelSize);
-    figure, plot(spatialFrequency,FSC)
+    figure, plot(spatialFrequency,FSC,'k','LineWidth',3)
+    set(gcf,'color','white')
     title('FSC between independent half reconstructions','FontSize',16)
     xlabel('Spatial Frequency','FontSize',14)
     ylabel('Correlation Coefficient','FontSize',14)
     
     %delete temporary files
-    delete('projections_half_1.mat','projections_half_2.mat','angles_half_1.mat','angles_half_2.mat')
+    delete('tmp/projections_half*.mat','tmp/angles_half*.mat')
 end
     
 %run reconstruction
