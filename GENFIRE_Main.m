@@ -5,54 +5,51 @@
 %%                                                                         %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% GENFIRE is a robust, Fourier-based reconstruction algorithm that is
-%% capable of using a limited set of input projections to generate a 3D reconstruction
-%% while also partially retrieving missing projection information. It does this by iterating 
-%% between real and reciprocal space and applying simple constraints in each to find an optimal solution that  
-%% correlates with the input projections while simultaneously obeying real space conditions
-%% such as positivity (the assumption that there is no negative electron density)
-%% and support (we require that the 3D object resulting from zero padded projections
-%% exists entirely within some smaller region). The result is a more consistent 
-%% and faithful reconstruction with superior contrast and, in many cases, resolution when
-%% compared with more traditional 3D reconstruction algorithms such as
-%% Filtered Back-Projection.  
-
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
+%% email:  apryor6@gmail.com
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 addpath ./source/
+addpath ./data/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%   User Parameters   %%%
-filename_Projections = './data/projections.mat';%%filename of projections, which should be size NxNxN_projections where N_projections is the number of projections
-filename_Angles = './data/angles.mat';%%angles can be either a 1xN_projections array containing a single tilt series, or
-%%a 3xN_projections array containing 3 Euler angles for each projections in the form [phi;theta;psi]
-filename_Support = './data/support.mat'; %% NxNxN binary array specifying a region of 1's in which the reconstruction can exist 
+%%%                          User Parameters                              %%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% See the README for description of parameters
+
+filename_Projections = './data/projections.mat';
+filename_Angles = './data/angles.mat';
+filename_Support = './data/support.mat'; 
 % filename_InitialModel = '';
 filename_Results = './results/GENFIRE_rec.mat';
 numIterations = 50; 
 pixelSize = .5; 
-oversamplingRatio =3; %%The code will zero-pad projections for you to the inputted oversampling ratio. If your projections are already oversampled
-%%then set this to 1.
-griddingMethod = 1; %% 1) Use fastest FFT method with mex-compiled function weightVals.cpp (see INSTALL_NOTES.txt for more info). 2) Use FFT method. 3) Use DFT method, which exactly calculates the closest measured value to each grid point rather than using the nearest FFT pixel. This is the most accurate but also slowest method
-interpolationCutoffDistance =.7; %%radius of sphere (in pixels) within which to include measured datapoints 
-%%when assembling the 3D Fourier grid
-ComputeFourierShellCorrelation = 1; %%set to 1 to divide dataset in half, independently reconstruct, and compute Fourier Shell Correlation (FSC) between two halves.
-numBins = 50; %number of bins for FRC averaging
-constraintEnforcementMode = 3; % 1) Use resoution extension/suppression. 2) Resolution extension only 3) Enforce all datapoints always.
+oversamplingRatio =3;
+griddingMethod = 1; 
+allowMultipleGridMatches = 1;
+constraintEnforcementMode = 3; 
+interpolationCutoffDistance =.7; 
+constraintPositivity = 1;
+constraintSupport = 1;
+ComputeFourierShellCorrelation = 0; 
+numBins = 50;
 percentValuesForRfree = 0.05;
 numBinsRfree = 15;
 doCTFcorrection = 0;
-CTFThrowOutThreshhold = 0; % If doing CTF correction, Fourier components in regions of the image where the CTF is below this threshhold will not be gridded
+CTFThrowOutThreshhold = 0;
 
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Begin 
+% Begin GENFIRE
 
 switch constraintEnforcementMode
     case 1
@@ -65,7 +62,7 @@ switch constraintEnforcementMode
         error('GENFIRE: ERROR! constraintEnforcementMode value %d not understood',constraintEnforcementMode)
 end
 
-%create parameter structure
+%create reconstruction parameter structure
 GENFIRE_parameters.filename_Projections = filename_Projections;
 GENFIRE_parameters.filename_Angles = filename_Angles;
 GENFIRE_parameters.filename_Support = filename_Support;
@@ -79,6 +76,8 @@ GENFIRE_parameters.numIterations = numIterations;
 GENFIRE_parameters.pixelSize = pixelSize;
 GENFIRE_parameters.oversamplingRatio = oversamplingRatio;
 GENFIRE_parameters.interpolationCutoffDistance = interpolationCutoffDistance;
+GENFIRE_parameters.constraintPositivity = constraintPositivity;
+GENFIRE_parameters.constraintSupport = constraintSupport;
 if exist('particleWindowSize','var')
 GENFIRE_parameters.particleWindowSize = particleWindowSize;
 else
@@ -90,6 +89,7 @@ GENFIRE_parameters.numBinsRfree = numBinsRfree;
 GENFIRE_parameters.doCTFcorrection = doCTFcorrection;
 GENFIRE_parameters.CTFThrowOutThreshhold = CTFThrowOutThreshhold;
 GENFIRE_parameters.griddingMethod = griddingMethod;
+GENFIRE_parameters.allowMultipleGridMatches = allowMultipleGridMatches;
 if exist('phaseErrorSigmaTolerance','var')
     GENFIRE_parameters.phaseErrorSigmaTolerance = phaseErrorSigmaTolerance;
 else

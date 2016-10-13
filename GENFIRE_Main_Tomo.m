@@ -23,30 +23,33 @@ addpath ./data/
 %%%                          User Parameters                              %%% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-filename_Projections = 'data/projections.mat';%%filename of projections, which should be size NxNxN_projections where N_projections is the number of projections
-filename_Angles = 'data/angles.mat';%%angles can be either a 1xN_projections array containing a single tilt series, or
-%%a 3xN_projections array containing 3 Euler angles for each projections in the form [phi;theta;psi]
-filename_Support = 'data/support.mat'; %% NxNxN binary array specifying a region of 1's in which the reconstruction can exist 
-% filename_InitialModel = '.\models\betagal\model.mat';
+%%% See the README for description of parameters
+
+filename_Projections = 'data/projections.mat';
+filename_Angles = 'data/angles.mat';
+filename_Support = 'data/support.mat';
+% filename_InitialModel = '';
 filename_Results = 'results/GENFIRE_rec.mat';
 numIterations = 50; 
 pixelSize = .5; 
-oversamplingRatioX =3; %%The code will zero-pad projections for you to the inputted oversampling ratio. If your projections are already oversampled
-%%then set this to 1.
-oversamplingRatioY =1; %%The code will zero-pad projections for you to the inputted oversampling ratio. If your projections are already oversampled
-%%then set this to 1.
-griddingMethod = 1; %% 1) Use fastest FFT method with mex-compiled function weightVals.cpp (see INSTALL_NOTES.txt for more info). 2) Use FFT method. 3) Use DFT method, which exactly calculates the closest measured value to each grid point rather than using the nearest FFT pixel. This is the most accurate but also slowest method
-constraintEnforcementMode = 1; % 1) Use resoution extension/suppression. 2) Resolution extension only 3) Enforce all datapoints always.
-interpolationCutoffDistance =.7; %%radius of sphere (in pixels) within which to include measured datapoints 
-%%when assembling the 3D Fourier grid
-ComputeFourierShellCorrelation = 1; %%set to 1 to divide dataset in half, independently reconstruct, and compute Fourier Shell Correlation (FSC) between two halves.
-numBins = 50; %number of bins for FSC averaging
-%% If you do not need FRC, set ComputeFourierShellCorrelation to 0 for speed as the FRC calculation requires reconstructing everything twice
+oversamplingRatioX =3;
+oversamplingRatioY =1;
+griddingMethod = 1; 
+allowMultipleGridMatches = 1;
+constraintEnforcementMode = 1;
+interpolationCutoffDistance =.7;
+constraintPositivity = 1;
+constraintSupport = 1;
+ComputeFourierShellCorrelation = 1;
+numBins = 50; 
 percentValuesForRfree = 0.05;
 numBinsRfree = 10;
 doCTFcorrection = 0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin GENFIRE
 switch constraintEnforcementMode
     case 1
         constraintEnforcementDelayWeights = [0.95:-0.1:-0.15 -10 -10 -10 -0.15:0.1:.95];  
@@ -58,7 +61,7 @@ switch constraintEnforcementMode
         error('GENFIRE: ERROR! constraintEnforcementMode value %d not understood',constraintEnforcementMode)
 end
 
-%create parameter structure
+%create reconstruction parameter structure
 
 if nargin < 2
 start = 'begin';
@@ -81,6 +84,8 @@ GENFIRE_parameters.pixelSize = pixelSize;
 GENFIRE_parameters.oversamplingRatioX = oversamplingRatioX;
 GENFIRE_parameters.oversamplingRatioY = oversamplingRatioY;
 GENFIRE_parameters.interpolationCutoffDistance = interpolationCutoffDistance;
+GENFIRE_parameters.constraintPositivity = constraintPositivity;
+GENFIRE_parameters.constraintSupport = constraintSupport;
 if exist('particleWindowSize','var')
 GENFIRE_parameters.particleWindowSize = particleWindowSize;
 else
@@ -91,6 +96,7 @@ GENFIRE_parameters.percentValuesForRfree = percentValuesForRfree;
 GENFIRE_parameters.numBinsRfree = numBinsRfree;
 GENFIRE_parameters.doCTFcorrection = doCTFcorrection;
 GENFIRE_parameters.griddingMethod = griddingMethod;
+GENFIRE_parameters.allowMultipleGridMatches = allowMultipleGridMatches;
 if exist('phaseErrorSigmaTolerance','var')
     GENFIRE_parameters.phaseErrorSigmaTolerance = phaseErrorSigmaTolerance;
 else

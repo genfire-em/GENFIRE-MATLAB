@@ -4,19 +4,13 @@
 %%  projections - measured projections
 %%  angles - Euler angles in the form 3xN_projections, where each projection has 3 angles in the form [phi;theta;psi]
 %%  interpolationCutoffDistance - radius of sphere in which to include measured
+%%  oversamplingRatio - oversampling ratio for the projections in each direction
 %%      values when filling in grid. All points within this sphere will be weighted
 %%      linearly by their inverse distance. 
+%%  interpolationCutoffDistance - radius of interpolation kernel
 %%  doCTFcorrection - flag to correct for Contrast Transfer Function (CTF) in projections, requires CTFparameters
-%%  CTFparameters - structure containing for each projection (square brackets indicate optional parameters)
-%%					defocusU - defocus in u-direction in Angstroms
-%%					defocusV - defocus in v-direction in Angstroms
-%%					defocusAngle - defocus angle in degrees
-%%					phaseFlip - negate the sign of frequency components where the CTF is negative
-%%					[ignore_first_peak] - boolean flag to not correct CTF within the first order
-%%					[CTFThrowOutThreshhold] - threshhold value below which projection data will not be gridded, for the purpose of not using poor SNR datapoints
-%%					[correctAmplitudesWithWienerFilter] - construct and apply Wiener filter for amplitude correction, requires an estimate of the specral signal-to-noise ratio (SSNR)
-%%					[SSNR] - required if using correctAmplitudesWithWienerFilter
-%%					[multiplyByCTFabs] - alternative method for correcting CTF amplitudes sometimes useful for very noisy data
+%%  CTFparameters - structure containing defocus values and defocus angle for each projection
+%%  allowMultipleGridMatches - whether or not to allow each measured datapoint to be matched to multiple grid points
 
 %%outputs:
 %%  rec - inverse FFT of the assembled Fourier grid
@@ -30,7 +24,7 @@
 
 
 
-function [rec, measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection,CTFparameters)
+function [rec, measuredK] = fillInFourierGrid(projections, angles, particleWindowSize, oversamplingRatio, interpolationCutoffDistance, doCTFcorrection, CTFparameters, allowMultipleGridMatches)
 
 %create empty CTF parameters if not doing CTF correction
 if ~doCTFcorrection
@@ -179,8 +173,11 @@ masterVals = [];%complex values to include in weighted averaging for those grid 
 masterDistances = [];%distance from measured value to grid point
 % masterConfidenceWeights = [];
 
-%shiftMax = round(interpolationCutoffDistance);
-shiftMax = 0;
+if allowMultipleGridMatches
+    shiftMax = round(interpolationCutoffDistance);
+else
+    shiftMax = 0;
+end
 %The nearest grid point to a measured value can be found by rounding, but
 %there can be more than one grid point within the cutoff sphere, so must
 %search locally for other possibilities. However in practice I have found 

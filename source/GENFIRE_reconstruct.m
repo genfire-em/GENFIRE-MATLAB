@@ -10,18 +10,17 @@ numIterations = GENFIRE_parameters.numIterations;
 % pixelSize = GENFIRE_parameters.pixelSize;
 oversamplingRatio = GENFIRE_parameters.oversamplingRatio;
 interpolationCutoffDistance = GENFIRE_parameters.interpolationCutoffDistance;
+constraintPositivity = GENFIRE_parameters.constraintPositivity;
+constraintSupport = GENFIRE_parameters.constraintSupport;
 particleWindowSize = GENFIRE_parameters.particleWindowSize;
 numBins = GENFIRE_parameters.numBins;
 percentValuesForRfree = GENFIRE_parameters.percentValuesForRfree;
 numBinsRfree = GENFIRE_parameters.numBinsRfree;
 doCTFcorrection = GENFIRE_parameters.doCTFcorrection;
 griddingMethod = GENFIRE_parameters.griddingMethod;
+allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
+
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
-if isfield(GENFIRE_parameters,'enforce_support')
-    enforce_support = GENFIRE_parameters.enforce_support;
-else
-    enforce_support = 1;
-end
 %%%   Begin Reconstruction   %%%
 angles = single(importdata(filename_Angles));
 projections = single(importdata(filename_Projections));
@@ -87,8 +86,8 @@ resRange = -0.05;%thickness of resolution ring to use for removal of datapoints 
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 switch griddingMethod
     case 1
-        [recIFFT measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection);%interpolate projections to Fourier grid
-    case 3
+        [recIFFT measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches);%interpolate projections to Fourier grid
+    case 2
         ori_projections = single(importdata(filename_Projections)); ori_projections = ori_projections(:,:,1:10);
         Typeind = 2;
         tic
@@ -127,9 +126,9 @@ end
 fprintf('GENFIRE: Reconstructing... \n\n');
 
 if isempty(initialObject)
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, enforce_support);   
+    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);   
 else
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, enforce_support);
+    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);
 end
 
 reconstructionTime = toc;

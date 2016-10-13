@@ -23,9 +23,10 @@
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.
 
-function [rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,measuredK,constraintIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, enforce_support)
+function [rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,measuredK,constraintIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, enforce_positivity, enforce_support)
 if nargin < 9
     enforce_support = 1;
+    enforce_positivity = 1;
 end
 bestErr = 1e30;%initialize best error
 Rfree_complex = -1*ones(1,numIterations,'single');%% initialize Rfree_complex curve , -1 is a flag that means undefined
@@ -49,9 +50,11 @@ for iterationNum = 1:numIterations
 if mod(iterationNum,1)==0
     iterationNum
 end
-initialObject(initialObject<0) = 0; %enforce positivity
+if enforce_positivity
+    initialObject(initialObject<0) = 0; %enforce positivity
+end
 if enforce_support
-initialObject = initialObject.*support;%enforce support
+    initialObject = initialObject.*support;%enforce support
 end
 
 k = my_fft(initialObject);%take FFT of initial object

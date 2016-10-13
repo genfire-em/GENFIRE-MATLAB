@@ -7,9 +7,10 @@
 %%  oversamplingRatioX(Y) - oversampling ratio for the projections in X (Y) direction
 %%      values when filling in grid. All points within this sphere will be weighted
 %%      linearly by their inverse distance. 
-
+%%  interpolationCutoffDistance - radius of interpolation kernel
 %%  doCTFcorrection - flag to correct for Contrast Transfer Function (CTF) in projections, requires CTFparameters
 %%  CTFparameters - structure containing defocus values and defocus angle for each projection
+%%  allowMultipleGridMatches - whether or not to allow each measured datapoint to be matched to multiple grid points
 
 %%outputs:
 %%  rec - inverse FFT of the assembled Fourier grid
@@ -21,7 +22,7 @@
 %% Copyright (c) 2015. All Rights Reserved.
 
 
-function [rec, measuredK] = fillInFourierGrid_tomo(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,doCTFcorrection,CTFparameters)
+function [rec, measuredK] = fillInFourierGrid_tomo(projections, angles, oversamplingRatioX, oversamplingRatioY, interpolationCutoffDistance, doCTFcorrection, CTFparameters, allowMultipleGridMatches)
 if mod(size(projections,2),2)==1 || mod(size(projections,1),2)==1
    error('Dimensions of projections must be even. They can be different, but must be even in current implementation.')
 end
@@ -222,8 +223,11 @@ masterInd = [];%masterInd will be a large list of the grid indices
 masterVals = [];%complex values to include in weighted averaging for those grid points
 masterDistances = [];%distance from measured value to grid point
 masterConfidenceWeights = [];
-%shiftMax = round(interpolationCutoffDistance);
- shiftMax = 0;
+if allowMultipleGridMatches
+    shiftMax = round(interpolationCutoffDistance);
+else
+    shiftMax = 0;
+end
 %The nearest grid point to a measured value can be found by rounding, but
 %there can be more than one grid point within the cutoff sphere, so must
 %search locally for other possibilities. However in practice I have found 

@@ -11,11 +11,14 @@ numIterations = GENFIRE_parameters.numIterations;
 oversamplingRatioX = GENFIRE_parameters.oversamplingRatioX;
 oversamplingRatioY = GENFIRE_parameters.oversamplingRatioY;
 interpolationCutoffDistance = GENFIRE_parameters.interpolationCutoffDistance;
+constraintPositivity = GENFIRE_parameters.constraintPositivity;
+constraintSupport = GENFIRE_parameters.constraintSupport;
 numBins = GENFIRE_parameters.numBins;
 percentValuesForRfree = GENFIRE_parameters.percentValuesForRfree;
 numBinsRfree = GENFIRE_parameters.numBinsRfree;
 doCTFcorrection = GENFIRE_parameters.doCTFcorrection;
 griddingMethod = GENFIRE_parameters.griddingMethod;
+allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
 projectionStart = GENFIRE_parameters.start;
 projectionStop = GENFIRE_parameters.stop;
@@ -77,8 +80,6 @@ end
 Q = make_Kspace_indices(support);
 resRange = -0.05;%thickness of resolution ring to use for removal of datapoints for Rfree test
 
-confidenceWeightVector =  ones(size(projections,3),numBins); %this is to weight all grid points equally
-
 %%INTERPOLATE TO GRID
 %%fillInFourierGrid_C contains the C++ code "weightVals.cpp" that must be
 %%compiled on your local machine to run. If you cannot get it to work with
@@ -87,8 +88,8 @@ confidenceWeightVector =  ones(size(projections,3),numBins); %this is to weight 
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 switch griddingMethod
     case 1
-        [recIFFT measuredK ] = fillInFourierGrid_tomo(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,doCTFcorrection);%interpolate projections to Fourier grid
-    case 3
+        [recIFFT measuredK ] = fillInFourierGrid_tomo(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches);%interpolate projections to Fourier grid
+    case 2
         ori_projections = single(importdata(filename_Projections)); ori_projections = ori_projections(:,:,1:10);
         Typeind = 2;
         tic
