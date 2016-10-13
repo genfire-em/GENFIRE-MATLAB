@@ -12,6 +12,8 @@
 %%  R_freeInd_complex - indices of 5% of points in the highest resolution shell of measuredK that are being withheld from 
 %%          reconstruction and compared to after iteration. 
 %%  R_freeVals_complex - corresponding complex values at the indices in R_freeInd_complex
+%%  enforce_positivity - whether or not to enforce positivity constraint
+%%  enforce_support - whether or not to enforce support constraint
 
 %%outputs:
 %%  rec - reconstruction after iteration
@@ -47,9 +49,6 @@ for iterationNum = 1:numIterations
         currentCutoffNum = currentCutoffNum+1;
         bestErr = 1e30;%reset best error
     end
-if mod(iterationNum,1)==0
-    iterationNum
-end
 if enforce_positivity
     initialObject(initialObject<0) = 0; %enforce positivity
 end
@@ -77,6 +76,7 @@ if errK(iterationNum)<bestErr %if current reconstruction has better error, updat
     rec = initialObject;
 end
 
+fprintf('GENFIRE: Iteration %d: Error = %d\n',iterationNum, errK(iterationNum));
 %enforce Fourier constraint
 k(constraintInd_complex) = measuredK(constraintInd_complex);
 

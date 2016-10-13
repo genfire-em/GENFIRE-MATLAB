@@ -84,18 +84,14 @@ resRange = -0.05;%thickness of resolution ring to use for removal of datapoints 
 %%the command "mex weightVals.cpp" then use the version fillInFourierGrid
 %%which does the same thing but is slower.
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
+
 switch griddingMethod
     case 1
-        [recIFFT measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches);%interpolate projections to Fourier grid
+        [recIFFT, measuredK ] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches);%interpolate projections to Fourier grid
     case 2
-        ori_projections = single(importdata(filename_Projections)); ori_projections = ori_projections(:,:,1:10);
-        Typeind = 2;
-        tic
-        measuredK = My_fill_cubicgrid_ver3_1(dim, dim, ori_projections, angles, interpolationCutoffDistance, Typeind, newDim, newDim,1);
-        interpTime = toc
-        [null1 null2,constraintConfidenceWeights,weightedDistances] = fillInFourierGrid(projections,angles,interpolationCutoffDistance,confidenceWeightVector);%interpolate projections to Fourier grid
-        recIFFT = real(my_ifft(measuredK));
+        [recIFFT, measuredK] = My_fill_grid_ver9(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, []);
 end
+
 if exist('sigmaPhases','var') && ~isempty(phaseErrorSigmaTolerance)
     measuredK(sigmaPhases>phaseErrorSigmaTolerance) = 0;
 end
@@ -115,6 +111,9 @@ for shellNum = 1:numBinsRfree %loop over each frequency shell
     P = randperm(numel(measuredPointInd_complex)); %shuffle values
     measuredPointInd_complex = measuredPointInd_complex(P); %apply shuffle
     cutoffInd_complex = floor(numel(measuredPointInd_complex).*percentValuesForRfree); %take indices for 5% of measured data
+    if cutoffInd_complex == 0 %make sure to include at least one point
+        cutoffInd_complex = 1;
+    end
     R_freeInd_complex{shellNum} = measuredPointInd_complex(1:cutoffInd_complex);%take complex value for 5% of measured data
 
     %now create a temporary set of constraints that have this 5% of

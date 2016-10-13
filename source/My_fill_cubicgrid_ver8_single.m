@@ -3,7 +3,7 @@
 % First version date: 2015. 04. 30.
 % output parameter: ftArray (nx x ny x nx) Fourier 3D array
 % input parameter: PROJvol - measured projection, (nx x ny x P) array with P # of projections
-%                  angles - 3 Euler angle array, (3 x P) array
+%                  angles - 3 Euler angle array, (P x 3) array
 %                  K_thresh - threshold for acceptible distance
 %                  Typeind - 1 for picking one minimal distance value
 %                            2 for weighted averaging all values within threshold
@@ -77,9 +77,9 @@ minInvThresh = 0.00001;
 normVECs = zeros(size(PROJvol,3),3);
 rotMATs = zeros(3,3,size(PROJvol,3));
 
-phis = angles(1,:);
-thetas = angles(2,:);
-psis = angles(3,:);
+phis = angles(:,1);
+thetas = angles(:,2);
+psis = angles(:,2);
 
 % calculate rotation matrices and normal vectors from the rotation matrices
 for i=1:size(PROJvol,3)

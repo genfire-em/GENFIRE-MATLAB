@@ -40,7 +40,7 @@ constraintEnforcementMode = 1;
 interpolationCutoffDistance =.7;
 constraintPositivity = 1;
 constraintSupport = 1;
-ComputeFourierShellCorrelation = 1;
+ComputeFourierShellCorrelation = 0;
 numBins = 50; 
 percentValuesForRfree = 0.05;
 numBinsRfree = 10;
@@ -73,7 +73,8 @@ GENFIRE_parameters.stop = stop;
 GENFIRE_parameters.filename_Projections = filename_Projections;
 GENFIRE_parameters.filename_Angles = filename_Angles;
 GENFIRE_parameters.filename_Support = filename_Support;
-GENFIRE_parameters.filename_Results = [filename_Results '_start' num2str(start)];
+[~, filename_Results, ~] = fileparts(filename_Results);
+GENFIRE_parameters.filename_Results = [filename_Results '_start' num2str(start) '.mat'];
 if exist('filename_InitialModel','var')
     GENFIRE_parameters.filename_InitialModel = filename_InitialModel;
 else
@@ -141,8 +142,8 @@ if ComputeFourierShellCorrelation
     GENFIRE_parameters_half2.filename_Projections = ['scratch/projections_half_2' '_start' num2str(start) '.mat'];
     GENFIRE_parameters_half1.filename_Angles = 'scratch/angles_half_1.mat';
     GENFIRE_parameters_half2.filename_Angles = 'scratch/angles_half_2.mat';
-    GENFIRE_parameters_half1.filename_Results = ['scratch/results_half_1.mat' '_start' num2str(start) '.mat'];
-    GENFIRE_parameters_half2.filename_Results = ['scratch/results_half_2.mat' '_start' num2str(start) '.mat'];
+    GENFIRE_parameters_half1.filename_Results = ['scratch/results_half_1' '_start' num2str(start) '.mat'];
+    GENFIRE_parameters_half2.filename_Results = ['scratch/results_half_2' '_start' num2str(start) '.mat'];
     %reconstruct halves individually
     fprintf('GENFIRE: Reconstructing first half...\n\n')
     GENFIRE_reconstruct_subsection(GENFIRE_parameters_half1)
