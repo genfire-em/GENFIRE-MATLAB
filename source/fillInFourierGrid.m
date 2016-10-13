@@ -6,7 +6,6 @@
 %%  interpolationCutoffDistance - radius of sphere in which to include measured
 %%      values when filling in grid. All points within this sphere will be weighted
 %%      linearly by their inverse distance. 
-%%  confidenceWeightVector - confidence weighting for grid points. Initialize to ones to use all data equally
 %%  doCTFcorrection - flag to correct for Contrast Transfer Function (CTF) in projections, requires CTFparameters
 %%  CTFparameters - structure containing for each projection (square brackets indicate optional parameters)
 %%					defocusU - defocus in u-direction in Angstroms
@@ -22,8 +21,6 @@
 %%outputs:
 %%  rec - inverse FFT of the assembled Fourier grid
 %%  measuredK -assembled Fourier Grid
-%%  constraintConfidenceWeights - effective confidence value for each grid point
-%%  weightedDistances - weight-averaged distance for experimental values used to compute each grid point
 
 %% Author: AJ Pryor
 %% Jianwei (John) Miao Coherent Imaging Group
@@ -33,7 +30,7 @@
 
 
 
-function [rec, measuredK, constraintConfidenceWeights, weightedDistances, sigmaPhases] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection,CTFparameters)
+function [rec, measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection,CTFparameters)
 
 %create empty CTF parameters if not doing CTF correction
 if ~doCTFcorrection
@@ -52,7 +49,6 @@ halfWindowSize = particleWindowSize/2;
 kMeasured = zeros(particleWindowSize*oversamplingRatio,particleWindowSize*oversamplingRatio,size(projections,3));
 
 tic %start clock
-confidenceWeightVector(confidenceWeightVector<0) = 0;%set negatively correlated values to 0 weighting (no confidence)
 
 %get the dimension (assumed square and even) and setup the center and radius of the array size
 dim1 = size(kMeasured,1);
@@ -76,57 +72,52 @@ if doCTFcorrection
        ignore_first_peak =  CTFparameters(1).ignore_first_peak;
     else
         ignore_first_peak = 0;
+    end  
+
+for projNum = 1:size(projections,3);
+    %get Contrast Transfer Function (CTF)
+    pjK = projections(:,:,projNum);
+    centralPixelK = size(pjK,2)/2+1;
+    
+    %crop out the appropriate window
+    pjK = pjK(centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1,centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1);%window projection
+
+    pjK = my_fft(padarray(pjK,[padding padding 0]));%pad and take FFT
+    
+    %get the CTF
+    [CTF, gamma] = ctf_correction(pjK,CTFparameters(projNum).defocusU,CTFparameters(projNum).defocusV,CTFparameters(projNum).defocusAngle,ignore_first_peak);%get CTF
+    if CTFparameters(projNum).phaseFlip %this should always be on unless your projections have already been CTF corrected elsewhere
+        pjK(CTF<0) = -1*pjK(CTF<0);%phase flip
     end
     
+    if CTFparameters(projNum).correctAmplitudesWithWienerFilter
+    	
+    	%get dimensions of the CTF array
+        dim1_2 = size(CTF,1);
+        nc2 = single(round((dim1_2+1)/2));%center pixel
+        n22 = single(nc2-1);%radius of array
 
-    for projNum = 1:size(projections,3);
-        %get Contrast Transfer Function (CTF)
-        pjK = projections(:,:,projNum);
-        centralPixelK = size(pjK,2)/2+1;
-
-        %crop out the appropriate window
-        pjK = pjK(centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1,centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1);%window projection
-
-        pjK = my_fft(padarray(pjK,[padding padding 0]));%pad and take FFT
-
-        %get the CTF
-        [CTF, gamma] = ctf_correction(pjK,CTFparameters(projNum).defocusU,CTFparameters(projNum).defocusV,CTFparameters(projNum).defocusAngle,ignore_first_peak);%get CTF
-        if CTFparameters(projNum).phaseFlip %this should always be on unless your projections have already been CTF corrected elsewhere
-            pjK(CTF<0) = -1*pjK(CTF<0);%phase flip
-        end
-
-        if CTFparameters(projNum).correctAmplitudesWithWienerFilter
-
-            %get dimensions of the CTF array
-            dim1_2 = size(CTF,1);
-            nc2 = single(round((dim1_2+1)/2));%center pixel
-            n22 = single(nc2-1);%radius of array
-
-            %reciprocal indices
-            [ky2, kx2] = meshgrid(-n22:n22-1,-n22:n22-1);ky2 = single(ky2);kx2 = single(kx2);
-            Q2 = sqrt(ky2.^2+kx2.^2)./n22;
-
-            SSNR = ones(size(Q2));%initialize SSNR map
-            %interpolate the SSNR array from the provided values of the SSNR per frequency shell
-            SSNR(:) = interp1(linspace(0,1+1e-10,size(CTFparameters(projNum).SSNR,2)),CTFparameters(projNum).SSNR,Q2(:),'linear');%make weighting map from average FRC
-            SSNR(isnan(SSNR)) = 0;
-            wienerFilter = abs(CTF)./(abs(CTF).^2+(1./SSNR));%construct Wiener filter for CTF amplitude correction
-            pjK = pjK.*wienerFilter; 
-        elseif CTFparameters(projNum).multiplyByCTFabs%multiplying by CTF boosts SNR and is most useful for datasets that are extremely noisy
-            pjK = pjK.*abs(CTF); 
-        end
-
-
-
-
-        if CTFThrowOutThreshhold>0 %recalculate CTF at new array size for throwing out values that were near CTF 0 crossover
-    %         CTF = ctf_correction(pjK,CTFparameters(projNum).defocusU,CTFparameters(projNum).defocusV,CTFparameters(projNum).defocusAngle,ignore_first_peak);%get CTF
-            pjK(abs(CTF)<CTFThrowOutThreshhold & (gamma>(pi/2))) = -999;%flag values where CTF was near 0 to ignore for gridding, but ignore out to first peak
-        end
-
-        kMeasured(:,:,projNum) = pjK;   
+		%reciprocal indices
+        [ky2, kx2] = meshgrid(-n22:n22-1,-n22:n22-1);ky2 = single(ky2);kx2 = single(kx2);
+        Q2 = sqrt(ky2.^2+kx2.^2)./n22;
+        
+        SSNR = ones(size(Q2));%initialize SSNR map
+        %interpolate the SSNR array from the provided values of the SSNR per frequency shell
+        SSNR(:) = interp1(linspace(0,1+1e-10,size(CTFparameters(projNum).SSNR,2)),CTFparameters(projNum).SSNR,Q2(:),'linear');%make weighting map from average FRC
+        SSNR(isnan(SSNR)) = 0;
+        wienerFilter = abs(CTF)./(abs(CTF).^2+(1./SSNR));%construct Wiener filter for CTF amplitude correction
+        pjK = pjK.*wienerFilter; 
+    elseif CTFparameters(projNum).multiplyByCTFabs%multiplying by CTF boosts SNR and is most useful for datasets that are extremely noisy
+        pjK = pjK.*abs(CTF); 
     end
-   
+    
+    if CTFThrowOutThreshhold>0 %recalculate CTF at new array size for throwing out values that were near CTF 0 crossover
+        pjK(abs(CTF)<CTFThrowOutThreshhold & (gamma>(pi/2))) = -999;%flag values where CTF was near 0 to ignore for gridding, but ignore out to first peak
+    end
+    
+    kMeasured(:,:,projNum) = pjK;   
+end
+    
     if CTFThrowOutThreshhold > 0     %flag values below the where the CTF was smaller than the CTFThrowOutThreshhold
         for projNum = 1:size(projections,3);
             pjK = projections(centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1,centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1,projNum);
@@ -134,15 +125,15 @@ if doCTFcorrection
             CTF = ctf_correction(pjK,CTFparameters(projNum).defocusU,CTFparameters(projNum).defocusV,CTFparameters(projNum).defocusAngle,ignore_first_peak);%get CTF
             pjK(abs(CTF)<CTFThrowOutThreshhold) = -999;%flag values where CTF was near 0 to ignore for gridding
             kMeasured(:,:,projNum) = pjK;
-        end
+        end  
     end
-else 
+else
     %otherwise, add the projection to the stack of data with no further corrections
     for projNum = 1:size(projections,3);
         kMeasured(:,:,projNum) = my_fft(padarray(projections(centralPixel-halfWindowSize:centralPixel+halfWindowSize-1,centralPixel-halfWindowSize:centralPixel+halfWindowSize-1,projNum),[padding padding  0]));
-    end    
+    end  
 end
-% kMeasured = projections;
+
 clear projections
 
 %initialize arrays to contain coordinates
@@ -150,16 +141,11 @@ measuredX = zeros(1,size(kMeasured,2)*size(kMeasured,1),size(kMeasured,3),'singl
 measuredY = zeros(1,size(kMeasured,2)*size(kMeasured,1),size(kMeasured,3),'single');
 measuredZ = zeros(1,size(kMeasured,2)*size(kMeasured,1),size(kMeasured,3),'single');
 
-%initialize arrays
-measuredK = zeros(dim1,dim1,dim1,'single');
-constraintConfidenceWeights = zeros(dim1,dim1,dim1,'single');
-
-confidenceWeights = zeros(dim1,dim1,size(kMeasured,3),'single');
 
 for projNum = 1:size(kMeasured,3);
-phi = angles(1,projNum);
-theta = angles(2,projNum);
-psi = angles(3,projNum);
+phi = angles(projNum,1);
+theta = angles(projNum,2);
+psi = angles(projNum,3);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -170,10 +156,6 @@ R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)
       sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
 
 rotkCoords = R'*[kx;ky;kz];%rotate coordinates
-currentConfidenceWeights = zeros(size(Q));
-currentConfidenceWeights(:) = interp1(linspace(0,1+1e-10,size(confidenceWeightVector,2)),confidenceWeightVector(projNum,:),Q(:),'linear');%make confidence map 
-currentConfidenceWeights(isnan(currentConfidenceWeights))=0;%extrapolated values will be NaN and are outside the resolution circle anyway
-confidenceWeights(:,:,projNum) = currentConfidenceWeights;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 measuredX(:,:,projNum) = rotkCoords(1,:);%rotated X
@@ -186,18 +168,16 @@ measuredX = reshape(measuredX,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasur
 measuredY = reshape(measuredY,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
 measuredZ = reshape(measuredZ,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
 kMeasured = reshape(kMeasured,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
-confidenceWeights = reshape(confidenceWeights,1,size(kMeasured,2)*size(kMeasured,1)*size(kMeasured,3));
 badInd = find(kMeasured==-999);%delete values that are flagged as bad
 measuredX(badInd) = [];
 measuredY(badInd) = [];
 measuredZ(badInd) = [];
 kMeasured(badInd) = [];
-confidenceWeights(badInd) = [];
 
 masterInd = [];%masterInd will be a large list of the grid indices
 masterVals = [];%complex values to include in weighted averaging for those grid points
 masterDistances = [];%distance from measured value to grid point
-masterConfidenceWeights = [];
+% masterConfidenceWeights = [];
 
 %shiftMax = round(interpolationCutoffDistance);
 shiftMax = 0;
@@ -216,26 +196,19 @@ for Yshift = -shiftMax:shiftMax
             tmpY = (round(measuredY)+Yshift);
             tmpZ = (round(measuredZ)+Zshift);
             tmpVals = kMeasured;
-            tmpConfidenceWeights = confidenceWeights;
             distances = sqrt(abs(measuredX-tmpX).^2+abs(measuredY-tmpY).^2+abs(measuredZ-tmpZ).^2); %compute distance to nearest voxel
             tmpY = tmpY+nc; %shift origin
             tmpZ = tmpZ+nc;
             tmpX = tmpX+nc;
-            goodInd = (~(tmpX>dim1|tmpX<1|tmpY>dim1|tmpY<1|tmpZ>dim1|tmpZ<1)) & distances<=interpolationCutoffDistance; %find candidate values
-                       
-            % proper programming practice would call for preallocation of
-            % these arrays to some maximum possible size, counting the
-            % number of actual values inserted, and truncating the list at the end,
-            % but there's no real bottleneck here so I don't bother
+            goodInd = (~(tmpX>dim1|tmpX<1|tmpY>dim1|tmpY<1|tmpZ>dim1|tmpZ<1)) & distances<=interpolationCutoffDistance;%find candidate values
             masterInd = [masterInd sub2ind([dim1 dim1 dim1],tmpX(goodInd),tmpY(goodInd),tmpZ(goodInd))]; %append values to lists
             masterVals = [masterVals tmpVals(goodInd)];
             masterDistances = [masterDistances distances(goodInd)];
-            masterConfidenceWeights = [masterConfidenceWeights tmpConfidenceWeights(goodInd)];
+
        end
    end
 end
-
- 
+   
 clear measuredX
 clear measuredY
 clear measuredZ
@@ -250,49 +223,16 @@ clear confidenceWeights
 % and then find the unique values by looking at the difference in
 % consecutive elements. 
 
-[masterInd sortInd] = sort(masterInd);%sort lists by voxel index
-masterVals = masterVals(sortInd);
-masterDistances = masterDistances(sortInd);
-masterConfidenceWeights = masterConfidenceWeights(sortInd);
-masterConfidenceWeights(isnan(masterConfidenceWeights)) = 0;
+masterDistances = masterDistances + 1e-5;
+masterDistances(masterDistances>0) = 1 ./ masterDistances(masterDistances>0);
+masterDistances(isnan(masterDistances)) = 0;
 
-[uniqueVals uniqueInd] = unique(masterInd);%find non repeating values
+measuredK = accumarray(masterInd',masterVals.*masterDistances,[dim1^3 1]);
+sumWeights = accumarray(masterInd',masterDistances,[dim1^3 1]);
+measuredK(sumWeights>0) = measuredK(sumWeights>0) ./ sumWeights(sumWeights>0);
+measuredK = reshape(measuredK,[dim1 dim1 dim1]);
+measuredK = hermitianSymmetrize(measuredK);
 
-uniqueInd(end+1) = length(masterInd)+1; %this is just a placeholder value
-diffVec = diff(uniqueInd);%find the transition indices
-singleInd = find(diffVec==1); %if a voxel was only matched once, we don't
-%need to bother computing the weighted average, as the weight will just be
-%1. This saves computation time, and this scenario happens frequently, i.e.
-%at high spatial frequencies in tomography data the datapoints are quite
-%isolated.
-multiInd = find(diffVec~=1);%these are voxels that are matched multiple times
-constraintConfidenceWeights(uniqueVals(singleInd)) = masterConfidenceWeights(uniqueInd(singleInd));
-measuredK(uniqueVals(singleInd)) = masterVals(uniqueInd(singleInd)).*constraintConfidenceWeights(uniqueVals(singleInd));
-if nargout>3
-    weightedDistances = zeros(size(measuredK),'single');
-    weightedDistances(uniqueVals(singleInd)) = (masterDistances(uniqueInd(singleInd))+1e-30).*constraintConfidenceWeights(uniqueVals(singleInd));
-end
-if nargout > 4
-   sigmaPhases = zeros(size(measuredK),'single'); 
-end
-
-%now loop over the lists of values, and for each grid point compute the
-%inverse distance normalized weighted average of all points matched to it
-for index = 1:length(multiInd)-1
-    ind = multiInd(index);
-    distances = masterDistances(uniqueInd(ind):uniqueInd(ind+1)-1)+1e-30; %fetch the distances
-    confWeights = masterConfidenceWeights(uniqueInd(ind):uniqueInd(ind+1)-1);%fetch the confidence values
-    complexVals = masterVals(uniqueInd(ind):uniqueInd(ind+1)-1); %fetch the values
-    weights = ((confWeights./(distances))./sum(((confWeights+1e-30)./(distances))));%calculate the weights
-    voxel_Mag = sum(weights.*abs(complexVals)); %weight average the magnitude
-    voxel_Phase = angle(sum(weights.*complexVals));%get the phase
-    measuredK(masterInd(uniqueInd(ind))) = voxel_Mag.*exp(1i.*voxel_Phase);%add the weighted value to the grid
-    constraintConfidenceWeights(masterInd(uniqueInd(ind))) = sum(weights.*confWeights);%grid the 3D confidence weights
-    if nargout>3
-    weightedDistances(masterInd(uniqueInd(ind))) = sum(distances.*weights);
-    end
-end
-constraintConfidenceWeights(isnan(constraintConfidenceWeights))=0;
 rec = real(my_ifft(measuredK));
 timeTakenToFillInGrid = toc;
 timeTakenToFillInGrid = round(10*timeTakenToFillInGrid)./10;

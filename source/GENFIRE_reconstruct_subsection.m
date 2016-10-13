@@ -87,9 +87,7 @@ confidenceWeightVector =  ones(size(projections,3),numBins); %this is to weight 
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 switch griddingMethod
     case 1
-        [recIFFT measuredK,constraintConfidenceWeights,weightedDistances, sigmaPhases] = fillInFourierGrid_tomo_C(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
-    case 2
-        [recIFFT, measuredK,constraintConfidenceWeights,weightedDistances] = fillInFourierGrid(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
+        [recIFFT measuredK ] = fillInFourierGrid_tomo(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,doCTFcorrection);%interpolate projections to Fourier grid
     case 3
         ori_projections = single(importdata(filename_Projections)); ori_projections = ori_projections(:,:,1:10);
         Typeind = 2;

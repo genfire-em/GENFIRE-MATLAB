@@ -1,4 +1,4 @@
-%%  hermitianSymmetrize_v2 %%
+%%  hermitianSymmetrize %%
 
 %%Applies Hermitian symmetry so that voxels are equal to complex
 %%conjugate of their Hermitian counterparts. If a value only exists at one
@@ -19,7 +19,7 @@
 %% University of California, Los Angeles
 %% Copyright (c) 2016. All Rights Reserved.
 
-function out = hermitianSymmetrize_v2(in)
+function out = hermitianSymmetrize(in)
 %get initial sizes
 [startdimx,startdimy,startdimz] = size(in);
 

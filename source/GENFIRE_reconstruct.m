@@ -78,26 +78,23 @@ end
 Q = make_Kspace_indices(support);
 resRange = -0.05;%thickness of resolution ring to use for removal of datapoints for Rfree test
 
-confidenceWeightVector =  ones(size(projections,3),numBins); %this is to weight all grid points equally
 
 %%INTERPOLATE TO GRID
-%%fillInFourierGrid_C contains the C++ code "weightVals.cpp" that must be
+%%fillInFourierGrid contains the C++ code "weightVals.cpp" that must be
 %%compiled on your local machine to run. If you cannot get it to work with
 %%the command "mex weightVals.cpp" then use the version fillInFourierGrid
 %%which does the same thing but is slower.
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 switch griddingMethod
     case 1
-        [recIFFT measuredK] = fillInFourierGrid_C(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
-    case 2
-        [recIFFT, measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,confidenceWeightVector,doCTFcorrection);%interpolate projections to Fourier grid
+        [recIFFT measuredK] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection);%interpolate projections to Fourier grid
     case 3
         ori_projections = single(importdata(filename_Projections)); ori_projections = ori_projections(:,:,1:10);
         Typeind = 2;
         tic
         measuredK = My_fill_cubicgrid_ver3_1(dim, dim, ori_projections, angles, interpolationCutoffDistance, Typeind, newDim, newDim,1);
         interpTime = toc
-        [null1 null2,constraintConfidenceWeights,weightedDistances] = fillInFourierGrid_C(projections,angles,interpolationCutoffDistance,confidenceWeightVector);%interpolate projections to Fourier grid
+        [null1 null2,constraintConfidenceWeights,weightedDistances] = fillInFourierGrid(projections,angles,interpolationCutoffDistance,confidenceWeightVector);%interpolate projections to Fourier grid
         recIFFT = real(my_ifft(measuredK));
 end
 if exist('sigmaPhases','var') && ~isempty(phaseErrorSigmaTolerance)
