@@ -1,3 +1,9 @@
+%% Author: Marcus Gallagher-Jones
+%% Jianwei (John) Miao Coherent Imaging Group
+%% University of California, Los Angeles
+%% Copyright (c) 2015. All Rights Reserved.
+
+
 function [CTF, gamma] = ctf_correction(imin,DeltaFu,DeltaFv,azimuthal_ang,ignore_first_peak)
 
 %% Initial parameters
@@ -19,10 +25,6 @@ Qn = 0;
 
 
 Cs= 2.0*10^(7); % Spherical abberation of the microscope from mm into Angstrom
-% Cc = 2*10^(7); % Chromatic abberation of the microscope from mm into Angstrom
-% deltaE = 0.02; % Energy width in eV
-% alph = 0.02/1000; % illumination aperture in mrad (default 0.02 - reasonable for FEG)
-% % azimuthal_ang = -2.04; % angle of astygmatism in degrees
 rad_azimuth  = degtorad(azimuthal_ang);
 defocav = -(DeltaFu + DeltaFv)/2;
 defocdev = -(DeltaFu - DeltaFv)/2;

@@ -16,7 +16,7 @@
 %%  rec - inverse FFT of the assembled Fourier grid
 %%  measuredK -assembled Fourier Grid
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.

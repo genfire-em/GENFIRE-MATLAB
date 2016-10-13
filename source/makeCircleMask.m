@@ -1,4 +1,4 @@
-function out = makeCircleMask(radius,imgSize);
+function out = makeCircleMask(radius,imgSize)
 
 out = zeros(imgSize,imgSize);
 nc = imgSize/2+1;

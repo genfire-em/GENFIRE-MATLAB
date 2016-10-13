@@ -50,6 +50,8 @@ doCTFcorrection = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Begin GENFIRE
+
+%construct the flags for resolution extension control
 switch constraintEnforcementMode
     case 1
         constraintEnforcementDelayWeights = [0.95:-0.1:-0.15 -10 -10 -10 -0.15:0.1:.95];  
@@ -61,8 +63,11 @@ switch constraintEnforcementMode
         error('GENFIRE: ERROR! constraintEnforcementMode value %d not understood',constraintEnforcementMode)
 end
 
-%create reconstruction parameter structure
+%create reconstruction parameter structure, this is much easier than
+%passing a ton of parameters
 
+%if no arguments were provided, default to using the whole projection
+%rather than a section
 if nargin < 2
 start = 'begin';
 stop =  'end';
@@ -107,6 +112,13 @@ GENFIRE_parameters.constraintEnforcementDelayWeights = constraintEnforcementDela
 
 
 if ComputeFourierShellCorrelation
+    %If this is turned on, the data will be split in half, independently
+    %reconstructed, and the FSC will be calculated between the two halves
+    %as a cross validation metric. This is often used to determine
+    %resolution. This process creates intermediate files in ./scratch/ that
+    %will be deleted once it's finished. You can comment out the delete
+    %statements if you need to save the intermediate half reconstruction
+    %results
     fprintf('GENFIRE: Dividing datasets in half for FSC calculation...\n\n')
     projections = single(importdata(GENFIRE_parameters.filename_Projections));
     angles = single(importdata(GENFIRE_parameters.filename_Angles));

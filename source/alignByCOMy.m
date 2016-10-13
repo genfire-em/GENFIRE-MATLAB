@@ -8,12 +8,12 @@
 %%  imgOut - aligned image
 %%  shiftY  -  applied shift to align image
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.
 
-function [imgOut shiftY] = alignByCOMy(in)
+function [imgOut, shiftY] = alignByCOMy(in)
 
 [~, dimy] = size(in);
 centerY = round((dimy+1)/2);

@@ -13,7 +13,7 @@
 %%  spatialFrequency - "inverse resolution indices", equivalent to normalized spatial frequency
 %%  meanIntensity - average intensity at each shell
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.

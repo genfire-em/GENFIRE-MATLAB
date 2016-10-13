@@ -23,7 +23,7 @@
 %%  Rfree_magnitude - value of magnitude Rfree vs iteration
 %%  bestErrors - minimum reciprocal error for each filter
 
-%% Authors: AJ Pryor, Jose Rodriguez
+%% Authors: Alan (AJ) Pryor, Jr., Jose Rodriguez
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.

@@ -31,14 +31,14 @@ filename_Support = './data/support.mat';
 filename_Results = './results/GENFIRE_rec.mat';
 numIterations = 50; 
 pixelSize = .5; 
-oversamplingRatio =2;
+oversamplingRatio =3;
 griddingMethod = 1; 
-allowMultipleGridMatches = 0;
-constraintEnforcementMode = 3; 
+allowMultipleGridMatches = 1;
+constraintEnforcementMode = 1; 
 interpolationCutoffDistance =.7; 
 constraintPositivity = 1;
 constraintSupport = 1;
-ComputeFourierShellCorrelation = 0; 
+ComputeFourierShellCorrelation = 1; 
 numBins = 50;
 percentValuesForRfree = 0.05;
 numBinsRfree = 35;
@@ -51,6 +51,7 @@ CTFThrowOutThreshhold = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Begin GENFIRE
 
+%construct the flags for resolution extension control
 switch constraintEnforcementMode
     case 1
         constraintEnforcementDelayWeights = [0.95:-0.1:-0.15 -10 -10 -10 -0.15:0.1:.95];  
@@ -62,7 +63,8 @@ switch constraintEnforcementMode
         error('GENFIRE: ERROR! constraintEnforcementMode value %d not understood',constraintEnforcementMode)
 end
 
-%create reconstruction parameter structure
+%create reconstruction parameter structure, this is much easier than
+%passing a ton of parameters
 GENFIRE_parameters.filename_Projections = filename_Projections;
 GENFIRE_parameters.filename_Angles = filename_Angles;
 GENFIRE_parameters.filename_Support = filename_Support;
@@ -99,6 +101,13 @@ GENFIRE_parameters.constraintEnforcementDelayWeights = constraintEnforcementDela
 
 
 if ComputeFourierShellCorrelation
+    %If this is turned on, the data will be split in half, independently
+    %reconstructed, and the FSC will be calculated between the two halves
+    %as a cross validation metric. This is often used to determine
+    %resolution. This process creates intermediate files in ./scratch/ that
+    %will be deleted once it's finished. You can comment out the delete
+    %statements if you need to save the intermediate half reconstruction
+    %results
     fprintf('GENFIRE: Dividing datasets in half for FSC calculation...\n\n')
     projections = single(importdata(GENFIRE_parameters.filename_Projections));
     angles = single(importdata(GENFIRE_parameters.filename_Angles));

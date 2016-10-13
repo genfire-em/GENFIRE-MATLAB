@@ -8,12 +8,12 @@
 %%  imgOut - aligned image
 %%  shiftX  -  applied shift to align image
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.
 
-function [imgOut shiftX] = alignByCOMx(in)
+function [imgOut, shiftX] = alignByCOMx(in)
 
 [dimx, ~] = size(in);
 centerX = round((dimx+1)/2);

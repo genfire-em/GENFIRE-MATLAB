@@ -9,7 +9,7 @@
 %%outputs:
 %%  projection - result
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.
@@ -17,20 +17,15 @@
 
 
 function projection = calculate3Dprojection_interp(modelK,phi,theta,psi)
-%%only works for even images in current form%%
-%%%%
 
 %get dimensions and centers
 [dimx, dimy, dimz] = size(modelK);
-if mod(dimx,2)==1 || mod(dimz,2)==1 || mod(dimy,2)==1
-   error('GENFIRE: ERROR! All array dimensions must be even!\n\n') 
-end
 
-ncy = round((dimy+1)/2); ny2 = ncy-1;
-ncx = round((dimx+1)/2); nx2 = ncx-1;
-ncz = round((dimz+1)/2); nz2 = ncz-1;
+ncy = round((dimy+1)/2); 
+ncx = round((dimx+1)/2); 
+ncz = round((dimz+1)/2);
 
-[Y, X, Z] = meshgrid(-ny2:ny2-1,-nx2:nx2-1,0);
+[Y, X, Z] = meshgrid((1:dimy) - ncy, (1:dimx) - ncx, 0);
 
 %calculate rotation matrix
 R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)*sind(phi)+sind(psi)*cosd(phi)   ,    -cosd(psi)*sind(theta);
@@ -38,7 +33,7 @@ R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)
       sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
 
   
-[ky kx kz ] = meshgrid(-ny2:ny2-1,-nz2:nz2-1,-nz2:nz2-1);
+[ky kx kz ] = meshgrid((1:dimy) - ncy, (1:dimx) - ncx, (1:dimz) - ncz);
 
 %rotate coordinates
 rotkCoords = R'*[X(:)';Y(:)';Z(:)'];

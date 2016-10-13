@@ -3,7 +3,7 @@
 Welcome to the MATLAB implementation of GENFIRE. 
 
 
-GENFIRE is a robust, Fourier-based reconstruction algorithm that is
+GENFIRE, for GENeralized Fourier Iterative REconstruction, is a robust, Fourier-based reconstruction algorithm that is
 capable of using a limited set of input projections to generate a 3D reconstruction
 while also partially retrieving missing projection information. It does this by iterating 
 between real and reciprocal space and applying simple constraints in each to find an optimal solution that  
@@ -14,7 +14,7 @@ compared with more traditional 3D reconstruction algorithms such as Filtered Bac
 ## Tutorial
 Reconstructions are run either with `GENFIRE_Main.m` for a cubic array and 3 Euler angles or with `GENFIRE_Main_Tomo.m` for a rectangular array with a single tilt-axis. Simply edit the parameters in the appropriate file and run the script to execute the reconstruction. The parameters that may be adjusted are
 
-* `filename_Projections` ( *char* ) - filename containing projection images as an N x N x num\_projections array
+* `filename_Projections` ( *char* ) - filename containing projection images as an N x N x num\_projections array (N must be even)
 
 * `filename_Angles` ( *char* ) - filename containing the angles as either a num\_projections x 3 array of Euler angle triples (phi, theta, psi) or a num\_projections x 1 array indicating a single-axis tilt series
 * `filename_Support` ( *char* ) - filename containing an NxNxN binary support

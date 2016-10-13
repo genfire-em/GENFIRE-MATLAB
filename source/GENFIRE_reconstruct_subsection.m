@@ -1,3 +1,16 @@
+%%  GENFIRE_reconstruct_subsection %%
+
+%% Primary control function for reconstructions
+
+%%inputs:
+%%  GENFIRE_parameters - struct containing reconstruction parameters
+
+
+%% Author: Alan (AJ) Pryor, Jr.
+%% Jianwei (John) Miao Coherent Imaging Group
+%% University of California, Los Angeles
+%% Copyright (c) 2015. All Rights Reserved.
+
 function GENFIRE_reconstruct_subsection(GENFIRE_parameters)
 
 %unpack reconstruction parameters
@@ -7,7 +20,7 @@ filename_Support = GENFIRE_parameters.filename_Support;
 filename_Results = GENFIRE_parameters.filename_Results;
 filename_InitialModel = GENFIRE_parameters.filename_InitialModel;
 numIterations = GENFIRE_parameters.numIterations;
-% pixelSize = GENFIRE_parameters.pixelSize;
+pixelSize = GENFIRE_parameters.pixelSize;
 oversamplingRatioX = GENFIRE_parameters.oversamplingRatioX;
 oversamplingRatioY = GENFIRE_parameters.oversamplingRatioY;
 interpolationCutoffDistance = GENFIRE_parameters.interpolationCutoffDistance;
@@ -22,18 +35,20 @@ allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
 projectionStart = GENFIRE_parameters.start;
 projectionStop = GENFIRE_parameters.stop;
+
 %%%   Begin Reconstruction   %%%
-angles = single(importdata(filename_Angles));%casting to single saves memory
+
+if griddingMethod>2
+   error('GENFIRE: Unrecognized gridding method.') 
+end
+
+angles = single(importdata(filename_Angles));
 projections = single(importdata(filename_Projections));
 if ~ischar(projectionStart)
     projections = projections(:,projectionStart:projectionStop);
 else
     projectionStart = 1;
     projectionStop = size(projections,2);
-end
-
-if griddingMethod==3
-   error('GENFIRE: DFT gridding currently not supported in v1.6, update in near future. Change griddingMethod to 1 or 2.') 
 end
 
 %Initialize the initial object
@@ -46,6 +61,8 @@ end
 global support %make support variable globally accessable to avoid passing copies of large arrays around to different functions
 support = single(importdata(filename_Support));
 support = support(:,projectionStart:projectionStop,:);
+
+%get some values related to the size, center, etc of this array size
 vecX = 1:size(support,1); ncX = round((size(support,1)+1)/2); vecX = vecX - ncX;
 vecY = 1:size(support,2); ncY = round((size(support,2)+1)/2); vecY = vecY - ncY;
 vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
@@ -90,8 +107,7 @@ switch griddingMethod
     case 1
         [recIFFT, measuredK ] = fillInFourierGrid_tomo(projections,angles,oversamplingRatioX,oversamplingRatioY,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches);%interpolate projections to Fourier grid
     case 2
-        [recIFFT, measuredK] = My_fill_grid_ver9(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, []);
-
+        [recIFFT, measuredK] = fillInFourierGrid_DFT(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, []);
 end
 if exist('sigmaPhases','var') && ~isempty(phaseErrorSigmaTolerance)
     measuredK(sigmaPhases>phaseErrorSigmaTolerance) = 0;
@@ -123,6 +139,7 @@ for shellNum = 1:numBinsRfree %loop over each frequency shell
     R_freeVals_complex{shellNum} = measuredK(R_freeInd_complex{shellNum});
 end
 
+%run the actual reconstruction
 fprintf('GENFIRE: Reconstructing... \n\n');
 
 if isempty(initialObject)
@@ -143,6 +160,7 @@ recIFFT = recIFFT(vecX + ncX_big, vecY + ncY_big, vecZ + ncZ_big);%take back ori
 
 GENFIRE_parameters.reconstruction = GENFIRE_rec;
 GENFIRE_parameters.errK = errK;
+GENFIRE_parameters.Rfree_complex_bybin = Rfree_complex;
 
 %display the results
 figure,

@@ -14,7 +14,7 @@
 %%  out  -  input object to which apply Hermitian symmetry
 
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2016. All Rights Reserved.

@@ -8,7 +8,7 @@
 %%outputs:
 %%  Q - X, Y, and Z coordinates of voxels corresponding to a matrix of size(obj)
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.

@@ -20,7 +20,7 @@
 %%  errK - reciprocal space error
 %%  Rfree_complex - value of complex Rfree in each resolution shell vs iteration
 
-%% Author: AJ Pryor
+%% Author: Alan (AJ) Pryor, Jr.
 %% Jianwei (John) Miao Coherent Imaging Group
 %% University of California, Los Angeles
 %% Copyright (c) 2015. All Rights Reserved.
