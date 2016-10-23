@@ -35,6 +35,7 @@ allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
 projectionStart = GENFIRE_parameters.start;
 projectionStop = GENFIRE_parameters.stop;
+constraintEnforcementDelayIndicators = GENFIRE_parameters.constraintEnforcementDelayIndicators;
 
 %%%   Begin Reconstruction   %%%
 
@@ -117,7 +118,6 @@ resolutionWeights = zeros(size(Q)); %% first reconstruction uses resolution exte
 %%initially and the maximum enforced resolution increases. This is followed by resolution where suppression, which is the same process run backwards, so at the final iteration 
 %%only the lowest resolution is being enforced again.
 resolutionWeights(measuredK~=0) = 1-Q(measuredK~=0);%make lower resolution have higher confidence. Higher confidence means enforced earlier in the reconstruction and for longer overall than low confidence
-constraintEnforcementDelayWeights = resolutionWeights;
 
 %remove datapoints for Rfree calculation
 tmpMeasuredK = measuredK;
@@ -143,10 +143,9 @@ end
 fprintf('GENFIRE: Reconstructing... \n\n');
 
 if isempty(initialObject)
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionWeights,constraintEnforcementDelayWeights,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);   
-else
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,tmpMeasuredK,resolutionWeights,constraintEnforcementDelayWeights,R_freeInd_complex,R_freeVals_complex,constraintPositivity, constraintSupport);
+    initialObject = zeros(size(support));
 end
+[GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionWeights,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);   
 
 reconstructionTime = toc;
 reconstructionTime = round(10*reconstructionTime)./10;

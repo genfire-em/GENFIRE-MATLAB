@@ -33,7 +33,7 @@ doCTFcorrection = GENFIRE_parameters.doCTFcorrection;
 griddingMethod = GENFIRE_parameters.griddingMethod;
 allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
-
+constraintEnforcementDelayIndicators = GENFIRE_parameters.constraintEnforcementDelayIndicators;
 %%%   Begin Reconstruction   %%%
 
 if griddingMethod>2
@@ -116,7 +116,7 @@ resolutionIndicators = zeros(size(Q)); %% first reconstruction uses resolution e
 %%initially and the maximum enforced resolution increases. This is followed by resolution where suppression, which is the same process run backwards, so at the final iteration 
 %%only the lowest resolution is being enforced again.
 resolutionIndicators(measuredK~=0) = 1-Q(measuredK~=0);%make lower resolution have higher confidence. Higher confidence means enforced earlier in the reconstruction and for longer overall than low confidence
-constraintEnforcementDelayIndicators = resolutionIndicators;
+
 
 %remove datapoints for Rfree calculation
 tmpMeasuredK = measuredK;
@@ -142,10 +142,9 @@ end
 fprintf('GENFIRE: Reconstructing... \n\n');
 
 if isempty(initialObject)
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);   
-else
-    [GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,initialObject,support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);
+    initialObject = zeros(size(support));
 end
+[GENFIRE_rec, errK, Rfree_complex] = GENFIRE_iterate(numIterations,zeros(size(support),'single'),support,tmpMeasuredK,resolutionIndicators,constraintEnforcementDelayIndicators,R_freeInd_complex,R_freeVals_complex, constraintPositivity, constraintSupport);   
 
 reconstructionTime = toc;
 reconstructionTime = round(10*reconstructionTime)./10;

@@ -54,11 +54,11 @@ doCTFcorrection = 0;
 %construct the flags for resolution extension control
 switch constraintEnforcementMode
     case 1
-        constraintEnforcementDelayWeights = [0.95:-0.1:-0.15 -10 -10 -10 -0.15:0.1:.95];  
+        constraintEnforcementDelayIndicators = [0.95:-0.1:-0.15 -10 -10 -10 -0.15:0.1:.95];  
     case 2
-        constraintEnforcementDelayWeights = [0.95:-0.1:-0.15 -10 -10];
+        constraintEnforcementDelayIndicators = [0.95:-0.1:-0.15 -10 -10];
     case 3
-        constraintEnforcementDelayWeights = [-999, -999, -999, -999, -999];
+        constraintEnforcementDelayIndicators = [-999, -999, -999, -999, -999];
     otherwise
         error('GENFIRE: ERROR! constraintEnforcementMode value %d not understood',constraintEnforcementMode)
 end
@@ -108,7 +108,7 @@ if exist('phaseErrorSigmaTolerance','var')
 else
     GENFIRE_parameters.phaseErrorSigmaTolerance = [];
 end
-GENFIRE_parameters.constraintEnforcementDelayWeights = constraintEnforcementDelayWeights;
+GENFIRE_parameters.constraintEnforcementDelayIndicators = constraintEnforcementDelayIndicators;
 
 
 if ComputeFourierShellCorrelation
