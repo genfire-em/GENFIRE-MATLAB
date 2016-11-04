@@ -86,7 +86,7 @@ if size(angles,2)>3
     error('The dimension of the angles is incorrect.')
 end
 if size(angles,2) ==1 
-angles = [zeros(1,length(angles)),  angles, zeros(1,length(angles))];%tomography tilt is the theta angle
+angles = [zeros(length(angles),1),  angles, zeros(length(angles),1)];%tomography tilt is the theta angle
 end
 
 
