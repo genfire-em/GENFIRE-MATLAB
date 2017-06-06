@@ -24,7 +24,7 @@
 
 
 
-function [rec, measuredK] = fillInFourierGrid(projections, angles, particleWindowSize, oversamplingRatio, interpolationCutoffDistance, doCTFcorrection, CTFparameters, allowMultipleGridMatches)
+function [rec, measuredK] = fillInFourierGrid(projections, angles, particleWindowSize, oversamplingRatio, interpolationCutoffDistance, doCTFcorrection, CTFparameters, allowMultipleGridMatches, GENFIRE_parameters)
 
 %create empty CTF parameters if not doing CTF correction
 if ~doCTFcorrection
@@ -35,25 +35,41 @@ if doCTFcorrection && nargin < 6
 end
 
 %calculate padding parameters for the inputted window size
-padding = round(particleWindowSize*(oversamplingRatio-1)/2);
+if ~(GENFIRE_parameters.userSetGridSize)
+%     paddingx = round(particleWindowSize*(oversamplingRatio-1)/2);
+    padding = round(particleWindowSize*(oversamplingRatio-1)/2);
+    halfWindowSize = round((1+size(projections,1)/2)) - 1;
+else
+%     paddingx = 1;
+%     paddingy = 1;
+%     halfWindowSize = particleWindowSize/2;
+%     halfWindowSize = particleWindowSize/2;
+end
 centralPixel = size(projections,2)/2+1;
-halfWindowSize = particleWindowSize/2;
 
 %initialize array to hold measured data
-kMeasured = zeros(particleWindowSize*oversamplingRatio,particleWindowSize*oversamplingRatio,size(projections,3));
+if (GENFIRE_parameters.userSetGridSize)
+    kMeasured = zeros(GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2), size(projections,3));
+else
+    kMeasured = zeros(particleWindowSize*oversamplingRatio,particleWindowSize*oversamplingRatio,size(projections,3));
+end
 
 tic %start clock
 
 %get the dimension (assumed square and even) and setup the center and radius of the array size
-dim1 = size(kMeasured,1);
-nc = single(round((dim1+1)/2));%center pixel
-n2 = single(nc-1);%radius of array
+dim1 = size(kMeasured,1);dim2 = size(kMeasured,2);
+ncx = single(round((dim1+1)/2));%center pixel
+n2x = single(ncx-1);%radius of array
+ncy = single(round((dim2+1)/2));%center pixel
+n2y = single(ncy-1);%radius of array
+% ncy = single(round((dim2+1)/2));%center pixel
+% n2y = single(ncy-1);%radius of array
 
 %setup the coordinates of the reciprocal slice to determine its 3D coordinates
-[ky, kx] = meshgrid(-n2:n2-1,-n2:n2-1);ky = single(ky);kx = single(kx);
-Q = sqrt(ky.^2+kx.^2)./n2;
+[ky, kx] = meshgrid(-n2y:n2y-1,-n2x:n2x-1);ky = single(ky);kx = single(kx);
+Q = sqrt((ky./n2y).^2+(kx ./ n2x).^2);
 kx = single(kx(:))'; ky = single(ky(:))'; %initialize coordinates of unrotate projection slice
-kz = zeros(1,dim1*dim1,'single'); %0 degree rotation is a projection onto the X-Y plane, so all points have kz=0;
+kz = zeros(1,dim1*dim2,'single'); %0 degree rotation is a projection onto the X-Y plane, so all points have kz=0;
 
 %check for the presence of some of the CTF correction options and set defaults if they are absent
 if doCTFcorrection
@@ -76,7 +92,12 @@ for projNum = 1:size(projections,3);
     %crop out the appropriate window
     pjK = pjK(centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1,centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1);%window projection
 
-    pjK = my_fft(padarray(pjK,[padding padding 0]));%pad and take FFT
+    if (GENFIRE_parameters.userSetGridSize)
+        pjK = my_fft(My_paddzero(pjK,[GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2)]));
+    else
+        pjK = my_fft(padarray(pjK,[padding padding 0]));%pad and take FFT
+    end
+    
     
     %get the CTF
     [CTF, gamma] = ctf_correction(pjK,CTFparameters(projNum).defocusU,CTFparameters(projNum).defocusV,CTFparameters(projNum).defocusAngle,ignore_first_peak);%get CTF
@@ -123,9 +144,15 @@ end
     end
 else
     %otherwise, add the projection to the stack of data with no further corrections
-    for projNum = 1:size(projections,3);
-        kMeasured(:,:,projNum) = my_fft(padarray(projections(centralPixel-halfWindowSize:centralPixel+halfWindowSize-1,centralPixel-halfWindowSize:centralPixel+halfWindowSize-1,projNum),[padding padding  0]));
-    end  
+    if (GENFIRE_parameters.userSetGridSize)
+        for projNum = 1:size(projections,3);
+            kMeasured(:,:,projNum) = my_fft(My_paddzero(projections(:, :, projNum), [GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2)]));
+        end  
+    else
+        for projNum = 1:size(projections,3);
+            kMeasured(:,:,projNum) = my_fft(padarray(projections(centralPixel-halfWindowSize:centralPixel+halfWindowSize-1,centralPixel-halfWindowSize:centralPixel+halfWindowSize-1,projNum),[padding padding  0]));
+        end  
+    end
 end
 
 clear projections
@@ -194,9 +221,9 @@ for Yshift = -shiftMax:shiftMax
             tmpZ = (round(measuredZ)+Zshift);
             tmpVals = kMeasured;
             distances = sqrt(abs(measuredX-tmpX).^2+abs(measuredY-tmpY).^2+abs(measuredZ-tmpZ).^2); %compute distance to nearest voxel
-            tmpY = tmpY+nc; %shift origin
-            tmpZ = tmpZ+nc;
-            tmpX = tmpX+nc;
+            tmpY = tmpY+ncy; %shift origin
+            tmpZ = tmpZ+ncx;
+            tmpX = tmpX+ncx;
             goodInd = (~(tmpX>dim1|tmpX<1|tmpY>dim1|tmpY<1|tmpZ>dim1|tmpZ<1)) & distances<=interpolationCutoffDistance;%find candidate values
             masterInd = [masterInd sub2ind([dim1 dim1 dim1],tmpX(goodInd),tmpY(goodInd),tmpZ(goodInd))]; %append values to lists
             masterVals = [masterVals tmpVals(goodInd)];

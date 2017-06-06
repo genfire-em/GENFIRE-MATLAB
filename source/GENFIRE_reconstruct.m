@@ -34,6 +34,8 @@ griddingMethod = GENFIRE_parameters.griddingMethod;
 allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
 constraintEnforcementDelayIndicators = GENFIRE_parameters.constraintEnforcementDelayIndicators;
+FourierGridSize = GENFIRE_parameters.FourierGridSize;
+userSetGridSize = GENFIRE_parameters.userSetGridSize;
 %%%   Begin Reconstruction   %%%
 
 if griddingMethod>2
@@ -61,25 +63,33 @@ vecY = 1:size(support,2); ncY = round((size(support,2)+1)/2); vecY = vecY - ncY;
 vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
 
 
-if isempty(particleWindowSize)
-    particleWindowSize = size(support,2);
+n2x = ncX - 1;%radius of smaller array
+n2y = ncY - 1;%radius of smaller array
+
+if userSetGridSize
+    newDimx = FourierGridSize(1);%size of oversampled array
+    newDimy = FourierGridSize(2);%size of oversampled array
+    newDimz = FourierGridSize(3);%size of oversampled array
 else
-    if particleWindowSize ~= size(support,2)
-        error('GENFIRE: ERROR! The size of your projections (set by particleWindowSize) does not match the dimensions of your support!')
-    end
+    newDimx = size(support,1)*oversamplingRatio;%size of oversampled array
+    newDimy = size(support,2)*oversamplingRatio;%size of oversampled array
+    newDimy = size(support,3)*oversamplingRatio;%size of oversampled array
+    particleWindowSize = size(projections,1);
 end
 
-n2 = particleWindowSize/2;%radius of smaller array
-newDim = particleWindowSize*oversamplingRatio;%size of oversampled array
-padding = round((newDim-particleWindowSize)/2);%how many zeros to add
+
+paddingx = round((newDimx-size(support,1))/2);%how many zeros to add
+paddingy = round((newDimy-size(support,2))/2);%how many zeros to add
+paddingz = round((newDimy-size(support,3))/2);%how many zeros to add
 
 %zero pad projections to user-inputted oversampling ratio
 numProj = size(projections,3);
-support = padarray(support,[padding padding padding]); %%zero pad support
-if initialObject
-    initialObject =  padarray(initialObject,[padding padding padding]); 
+if (~userSetGridSize)
+    support = padarray(support,[paddingx paddingy paddingz]); %%zero pad support
+    if initialObject
+        initialObject =  padarray(initialObject,[padding padding padding]); 
+    end
 end
-
 %If there is only one tilt angle (such as in tomography), fill in other
 %Euler angles with zeros
 if size(angles,2)>3
@@ -89,8 +99,12 @@ if size(angles,2) ==1
 angles = [zeros(length(angles),1),  angles, zeros(length(angles),1)];%tomography tilt is the theta angle
 end
 
+if GENFIRE_parameters.userSetGridSize
+        Q = make_Kspace_indices(ones([GENFIRE_parameters.FourierGridSize]));
+else
+    Q = make_Kspace_indices(support);
 
-Q = make_Kspace_indices(support);
+end
 resRange = -0.05;%thickness of resolution ring to use for removal of datapoints for Rfree test
 
 
@@ -103,9 +117,9 @@ fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 
 switch griddingMethod
     case 1
-        [recIFFT, measuredK ] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches);%interpolate projections to Fourier grid
+        [recIFFT, measuredK ] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches, GENFIRE_parameters);%interpolate projections to Fourier grid
     case 2
-        [recIFFT, measuredK] = fillInFourierGrid_DFT(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, []);
+        [recIFFT, measuredK] = fillInFourierGrid_DFT(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, [], GENFIRE_parameters);
 end
 
 if exist('sigmaPhases','var') && ~isempty(phaseErrorSigmaTolerance)

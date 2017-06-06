@@ -26,7 +26,9 @@ addpath ./data/
 
 filename_Projections = './data/projections.mat';
 filename_Angles = './data/angles.mat';
-filename_Support = './data/support.mat'; 
+filename_Support = './data/support180.mat'; 
+% filename_Support = './data/support.mat'; 
+
 % filename_InitialModel = '';
 filename_Results = './results/GENFIRE_rec.mat';
 numIterations = 50; 
@@ -44,7 +46,8 @@ percentValuesForRfree = 0.05;
 numBinsRfree = 35;
 doCTFcorrection = 0;
 CTFThrowOutThreshhold = 0;
-
+FourierGridSize = [180 180 180]; % manually input desired Fourier grid size or set to [] to automatically determine
+% FourierGridSize = []; % manually input desired Fourier grid size or set to [] to automatically determine
 
 
 
@@ -80,8 +83,14 @@ GENFIRE_parameters.oversamplingRatio = oversamplingRatio;
 GENFIRE_parameters.interpolationCutoffDistance = interpolationCutoffDistance;
 GENFIRE_parameters.constraintPositivity = constraintPositivity;
 GENFIRE_parameters.constraintSupport = constraintSupport;
+GENFIRE_parameters.FourierGridSize   = FourierGridSize;
+if ~isempty(FourierGridSize)
+    GENFIRE_parameters.userSetGridSize = true;
+else
+    GENFIRE_parameters.userSetGridSize = false;
+end
 if exist('particleWindowSize','var')
-GENFIRE_parameters.particleWindowSize = particleWindowSize;
+    GENFIRE_parameters.particleWindowSize = particleWindowSize;
 else
     GENFIRE_parameters.particleWindowSize = [];
 end
