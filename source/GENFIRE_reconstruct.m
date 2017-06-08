@@ -58,10 +58,20 @@ global support %make support variable globally accessable to avoid passing copie
 support = single(importdata(filename_Support));
 
 %get some values related to the size, center, etc of this array size
-vecX = 1:size(support,1); ncX = round((size(support,1)+1)/2); vecX = vecX - ncX;
-vecY = 1:size(support,2); ncY = round((size(support,2)+1)/2); vecY = vecY - ncY;
-vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
+% vecX = 1:size(support,1); ncX = round((size(support,1)+1)/2); vecX = vecX - ncX;
+% vecY = 1:size(support,2); ncY = round((size(support,2)+1)/2); vecY = vecY - ncY;
+% vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
+vecX = 1:size(projections,1); ncX = round((size(projections,1)+1)/2); vecX = vecX - ncX;
+vecY = 1:size(projections,2); ncY = round((size(projections,2)+1)/2); vecY = vecY - ncY;
 
+if userSetGridSize
+%     vecZ = 1:FourierGridSize(3); ncZ = round((FourierGridSize(3)+1)/2); vecZ = vecZ - ncZ;
+    zSubsetSize = ceil(FourierGridSize(3) / oversamplingRatio);
+    vecZ = 1:zSubsetSize; ncZ = round((zSubsetSize+1)/2); vecZ = vecZ - ncZ;
+
+else
+    vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
+end
 
 n2x = ncX - 1;%radius of smaller array
 n2y = ncY - 1;%radius of smaller array
@@ -109,17 +119,13 @@ resRange = -0.05;%thickness of resolution ring to use for removal of datapoints 
 
 
 %%INTERPOLATE TO GRID
-%%fillInFourierGrid contains the C++ code "weightVals.cpp" that must be
-%%compiled on your local machine to run. If you cannot get it to work with
-%%the command "mex weightVals.cpp" then use the version fillInFourierGrid
-%%which does the same thing but is slower.
 fprintf('GENFIRE: Assembling Fourier grid...\n\n');
 
 switch griddingMethod
     case 1
         [recIFFT, measuredK ] = fillInFourierGrid(projections,angles,particleWindowSize,oversamplingRatio,interpolationCutoffDistance,doCTFcorrection, [], allowMultipleGridMatches, GENFIRE_parameters);%interpolate projections to Fourier grid
     case 2
-        [recIFFT, measuredK] = fillInFourierGrid_DFT(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, [], GENFIRE_parameters);
+        [recIFFT, measuredK] = fillInFourierGrid_DFT(projections, angles, interpolationCutoffDistance, size(support,1), size(support,2), ones(size(projections,3),numBins), 1, 0, 0, []);
 end
 
 if exist('sigmaPhases','var') && ~isempty(phaseErrorSigmaTolerance)

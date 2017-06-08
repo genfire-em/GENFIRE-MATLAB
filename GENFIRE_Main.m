@@ -28,16 +28,19 @@ filename_Projections = './data/projections.mat';
 filename_Angles = './data/angles.mat';
 filename_Support = './data/support180.mat'; 
 % filename_Support = './data/support.mat'; 
+% filename_Support = './data/support180_180_90.mat'; 
+% filename_Support = './data/support180_180_168.mat'; 
 
 % filename_InitialModel = '';
-filename_Results = './results/GENFIRE_rec.mat';
+filename_Results = './results/GENFIRE_rec1.mat';
 numIterations = 50; 
 pixelSize = .5; 
 oversamplingRatio =3;
 griddingMethod = 1; 
 allowMultipleGridMatches = 1;
 constraintEnforcementMode = 1; 
-interpolationCutoffDistance =.7; 
+% interpolationCutoffDistance =.7; interpolationCutoffDistance =.7; 
+interpolationCutoffDistance =.7; interpolationCutoffDistance =.005; 
 constraintPositivity = 1;
 constraintSupport = 1;
 ComputeFourierShellCorrelation = 0; 
@@ -47,6 +50,8 @@ numBinsRfree = 35;
 doCTFcorrection = 0;
 CTFThrowOutThreshhold = 0;
 FourierGridSize = [180 180 180]; % manually input desired Fourier grid size or set to [] to automatically determine
+% FourierGridSize = [180 180 90]; % manually input desired Fourier grid size or set to [] to automatically determine
+% FourierGridSize = [180 180 168]; % manually input desired Fourier grid size or set to [] to automatically determine
 % FourierGridSize = []; % manually input desired Fourier grid size or set to [] to automatically determine
 
 
