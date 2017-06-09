@@ -182,21 +182,21 @@ GENFIRE_parameters.Rfree_complex_bybin = Rfree_complex;
 % GENFIRE_parameters.Rfree_complex_bybin = Rfree_complex_total;
 % %display the results
 figure,
-subplot(2,3,4), imagesc(squeeze(sum(GENFIRE_rec,1))),title('GENFIRE projection 1')
-subplot(2,3,5), imagesc(squeeze(sum(GENFIRE_rec,2))),title('GENFIRE projection 2')
-subplot(2,3,6), imagesc(squeeze(sum(GENFIRE_rec,3))),title('GENFIRE projection 3')
-subplot(2,3,1), imagesc(squeeze(sum(recIFFT,1))),title('before iteration projection 1')
-subplot(2,3,2), imagesc(squeeze(sum(recIFFT,2))),title('before iteration projection 2')
-subplot(2,3,3), imagesc(squeeze(sum(recIFFT,3))),title('before iteration projection 3')
+subplot(2,3,4), imagesc(squeeze(sum(GENFIRE_rec,1))),title('GENFIRE projection 1'),axis image
+subplot(2,3,5), imagesc(squeeze(sum(GENFIRE_rec,2))),title('GENFIRE projection 2'),axis image
+subplot(2,3,6), imagesc(squeeze(sum(GENFIRE_rec,3))),title('GENFIRE projection 3'),axis image
+subplot(2,3,1), imagesc(squeeze(sum(recIFFT,1))),title('before iteration projection 1'),axis image
+subplot(2,3,2), imagesc(squeeze(sum(recIFFT,2))),title('before iteration projection 2'),axis image
+subplot(2,3,3), imagesc(squeeze(sum(recIFFT,3))),title('before iteration projection 3'),axis image
 
 
 figure,
-subplot(2,3,4), imagesc(squeeze(GENFIRE_rec(ncX,:,:))),title('GENFIRE slice 1')
-subplot(2,3,5), imagesc(squeeze(GENFIRE_rec(:,ncY,:))),title('GENFIRE slice 2')
-subplot(2,3,6), imagesc(squeeze(GENFIRE_rec(:,:,ncZ))),title('GENFIRE slice 3')
-subplot(2,3,1), imagesc(squeeze(recIFFT(ncX,:,:))),title('before iteration slice 1')
-subplot(2,3,2), imagesc(squeeze(recIFFT(:,ncY,:))),title('before iteration slice 2')
-subplot(2,3,3), imagesc(squeeze(recIFFT(:,:,ncZ))),title('before iteration slice 3')
+subplot(2,3,4), imagesc(squeeze(GENFIRE_rec(ncX,:,:))),title('GENFIRE slice 1'),axis image
+subplot(2,3,5), imagesc(squeeze(GENFIRE_rec(:,ncY,:))),title('GENFIRE slice 2'),axis image
+subplot(2,3,6), imagesc(squeeze(GENFIRE_rec(:,:,ncZ))),title('GENFIRE slice 3'),axis image
+subplot(2,3,1), imagesc(squeeze(recIFFT(ncX,:,:))),title('before iteration slice 1'),axis image
+subplot(2,3,2), imagesc(squeeze(recIFFT(:,ncY,:))),title('before iteration slice 2'),axis image
+subplot(2,3,3), imagesc(squeeze(recIFFT(:,:,ncZ))),title('before iteration slice 3'),axis image
 
 %save results
 save(filename_Results, 'GENFIRE_parameters')
