@@ -49,7 +49,9 @@ centralPixel = size(projections,2)/2+1;
 
 %initialize array to hold measured data
 if (GENFIRE_parameters.userSetGridSize)
-    kMeasured = zeros(GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2), size(projections,3));
+%     kMeasured = zeros(GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2), size(projections,3));
+    kMeasured = zeros(size(projections,1) * oversamplingRatio, size(projections,1) * oversamplingRatio, size(projections,3));
+
 else
     kMeasured = zeros(particleWindowSize*oversamplingRatio,particleWindowSize*oversamplingRatio,size(projections,3));
 end
@@ -57,7 +59,8 @@ end
 tic %start clock
 
 %get the dimension (assumed square and even) and setup the center and radius of the array size
-dim1 = size(kMeasured,1);dim2 = size(kMeasured,2);
+dim1 = GENFIRE_parameters.FourierGridSize(1);
+dim2 = GENFIRE_parameters.FourierGridSize(2);
 if GENFIRE_parameters.userSetGridSize
     dim3 = GENFIRE_parameters.FourierGridSize(3);
 else
@@ -79,6 +82,9 @@ end
 
 %setup the coordinates of the reciprocal slice to determine its 3D coordinates
 % [ky, kx] = meshgrid(-n2y:n2y-1,-n2x:n2x-1);ky = single(ky);kx = single(kx);
+dim1_proj = size(projections,1)*oversamplingRatio;
+dim2_proj = size(projections,2)*oversamplingRatio;
+
 [ky, kx] = meshgrid(-n2y:n2y-1,-n2x:n2x-1);
 ky = single(ky) ./ n2y;
 kx = single(kx) ./ n2x;
@@ -86,6 +92,18 @@ kx = single(kx) ./ n2x;
 Q = sqrt(ky.^2+kx.^2);
 kx = single(kx(:))'; ky = single(ky(:))'; %initialize coordinates of unrotate projection slice
 kz = zeros(1,dim1*dim2,'single'); %0 degree rotation is a projection onto the X-Y plane, so all points have kz=0;
+
+ncx_proj = single(round((dim1_proj+1)/2));%center pixel
+n2x_proj = single(ncx_proj-1);%radius of array
+ncy_proj = single(round((dim2_proj+1)/2));%center pixel
+n2y_proj = single(ncy_proj-1);%radius of array
+[ky_proj, kx_proj] = meshgrid(-n2y_proj:n2y_proj-1,-n2x_proj:n2x_proj-1);
+ky_proj = single(ky_proj) ./ n2y_proj;
+kx_proj = single(kx_proj) ./ n2x_proj;
+% Q = sqrt((ky./n2y).^2+(kx ./ n2x).^2);
+Q_proj = sqrt(ky_proj.^2+kx_proj.^2);
+kx_proj = single(kx_proj(:))'; ky_proj = single(ky_proj(:))'; %initialize coordinates of unrotate projection slice
+kz_proj = zeros(1,dim1_proj*dim2_proj,'single'); %0 degree rotation is a projection onto the X-Y plane, so all points have kz=0;
 
 %check for the presence of some of the CTF correction options and set defaults if they are absent
 if doCTFcorrection
@@ -109,7 +127,8 @@ for projNum = 1:size(projections,3);
     pjK = pjK(centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1,centralPixelK-halfWindowSize:centralPixelK+halfWindowSize-1);%window projection
 
     if (GENFIRE_parameters.userSetGridSize)
-        pjK = my_fft(My_paddzero(pjK,[GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2)]));
+%         pjK = my_fft(My_paddzero(pjK,[GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2)]));
+        pjK = my_fft(My_paddzero(pjK,[dim1_proj, dim2_proj]));
     else
         pjK = my_fft(padarray(pjK,[padding padding 0]));%pad and take FFT
     end
@@ -162,7 +181,9 @@ else
     %otherwise, add the projection to the stack of data with no further corrections
     if (GENFIRE_parameters.userSetGridSize)
         for projNum = 1:size(projections,3);
-            kMeasured(:,:,projNum) = my_fft(My_paddzero(projections(:, :, projNum), [GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2)]));
+%             kMeasured(:,:,projNum) = my_fft(My_paddzero(projections(:, :, projNum), [GENFIRE_parameters.FourierGridSize(1), GENFIRE_parameters.FourierGridSize(2)]));
+            kMeasured(:,:,projNum) = my_fft(My_paddzero(projections(:, :, projNum), [dim1_proj, dim2_proj]));
+
         end  
     else
         for projNum = 1:size(projections,3);
@@ -192,7 +213,8 @@ R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)
       -sind(psi)*cosd(theta)*cosd(phi)-cosd(psi)*sind(phi), -sind(psi)*cosd(theta)*sind(phi)+cosd(psi)*cosd(phi) ,   sind(psi)*sind(theta)  ;
       sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
 
-rotkCoords = R'*[kx;ky;kz];%rotate coordinates
+% rotkCoords = R'*[kx;ky;kz];%rotate coordinates
+rotkCoords = R'*[kx_proj;ky_proj;kz_proj];%rotate coordinates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 measuredX(:,:,projNum) = rotkCoords(1,:);%rotated X

@@ -65,10 +65,10 @@ vecX = 1:size(projections,1); ncX = round((size(projections,1)+1)/2); vecX = vec
 vecY = 1:size(projections,2); ncY = round((size(projections,2)+1)/2); vecY = vecY - ncY;
 
 if userSetGridSize
-%     vecZ = 1:FourierGridSize(3); ncZ = round((FourierGridSize(3)+1)/2); vecZ = vecZ - ncZ;
-    zSubsetSize = ceil(FourierGridSize(3) / oversamplingRatio);
-    vecZ = 1:zSubsetSize; ncZ = round((zSubsetSize+1)/2); vecZ = vecZ - ncZ;
-
+    vecZ = 1:FourierGridSize(3); ncZ = round((FourierGridSize(3)+1)/2); vecZ = vecZ - ncZ;
+%     zSubsetSize = ceil(FourierGridSize(3) / oversamplingRatio);
+%     vecZ = 1:zSubsetSize; ncZ = round((zSubsetSize+1)/2); vecZ = vecZ - ncZ;
+%       vecZ = 1:GENFIRE_parameters.FourierGridSize(3);
 else
     vecZ = 1:size(support,3); ncZ = round((size(support,3)+1)/2); vecZ = vecZ - ncZ;
 end
