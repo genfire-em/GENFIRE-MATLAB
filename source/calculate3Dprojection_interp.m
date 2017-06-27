@@ -16,7 +16,7 @@
 
 
 
-function projection = calculate3Dprojection_interp(modelK,phi,theta,psi)
+function projection = calculate3Dprojection_interp(modelK,phi,theta,psi, custom_euler_rot_vecs)
 
 %get dimensions and centers
 [dimx, dimy, dimz] = size(modelK);
@@ -28,11 +28,14 @@ ncz = round((dimz+1)/2);
 [Y, X, Z] = meshgrid((1:dimy) - ncy, (1:dimx) - ncx, 0);
 
 %calculate rotation matrix
-R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)*sind(phi)+sind(psi)*cosd(phi)   ,    -cosd(psi)*sind(theta);
-      -sind(psi)*cosd(theta)*cosd(phi)-cosd(psi)*sind(phi), -sind(psi)*cosd(theta)*sind(phi)+cosd(psi)*cosd(phi) ,   sind(psi)*sind(theta)  ;
-      sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
+if nargin>4
+    R = (MatrixQuaternionRot(custom_euler_rot_vecs{1}, phi) * MatrixQuaternionRot(custom_euler_rot_vecs{2}, theta) * MatrixQuaternionRot(custom_euler_rot_vecs{3}, psi))';
+else
+    R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)*sind(phi)+sind(psi)*cosd(phi)   ,    -cosd(psi)*sind(theta);
+         -sind(psi)*cosd(theta)*cosd(phi)-cosd(psi)*sind(phi), -sind(psi)*cosd(theta)*sind(phi)+cosd(psi)*cosd(phi) ,   sind(psi)*sind(theta)  ;
+          sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
 
-  
+end
 [ky kx kz ] = meshgrid((1:dimy) - ncy, (1:dimx) - ncx, (1:dimz) - ncz);
 
 %rotate coordinates

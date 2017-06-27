@@ -32,6 +32,10 @@ Reconstructions are run either with `GENFIRE_Main.m` for a cubic array and 3 Eul
 * `interpolationCutoffDistance` ( *double* ) - maximum tolerable radial distance to consider measured datapoints for gridding to a given Fourier voxel
 * `constraintPositivity` ( *bool* ) - on/off positivity constraint
 * `constraintSupport` ( *bool* )  - on/off support constraint
+* `useCustomGridSize` ( *bool* )  - on/off manually choose the 3D array size of the Fourier grid as opposed to determining it automatically from the size of the projections. If this is turned on, the Fourier grid dimensions must be provided as a 3-element vector in `FourierGridSize` 
+* `FourierGridSize` ( *vector* )  - 3-element vector representing the dimensions of the custom Fourier grid size. Only used if `useCustomGridSize` = 1
+* `useCustomEulerConvention` ( *bool* )  - on/off use a custom Euler angle convention rather than the default z-y-z. The rotation vectors should be provided in `Euler_rot_vecs`
+* `Euler_rot_vecs` ( *cell array* )  - cell array containing three 3-element vectors representing the rotation axes to use for assembling the Fourier grid. The Euler angles (phi, theta, psi) will be applied using these Euler rotation vectors such that each projection is rotated by phi degrees about `Euler_rot_vecs{1}`, theta degrees about `Euler_rot_vecs{2}`, and psi degrees about `Euler_rot_vecs{3}`.
 
 * `ComputeFourierShellCorrelation` ( *bool* ) - the data will be divided into two halves, independently reconstructed, and the FSC will be compared between the two halves. A final reconstruction will then be computed from all of the data 
 * `numBins` ( *int* ) - number of bins to use in the calculation of FSC (if applicable)  
@@ -39,6 +43,7 @@ Reconstructions are run either with `GENFIRE_Main.m` for a cubic array and 3 Eul
 * `numBinsRfree` ( *int* ) - number of bins to divide Fourier space in for Rfree
 * `doCTFcorrection` ( *bool* ) *(experimental)* - turn on CTF correction
 * `CTFThrowOutThreshhold` ( *double* ) *(experimental)* - Fourier values in regions where the corresponding CTF is lower than this value will not be gridded
+
 
 >Author: Alan (AJ) Pryor, Jr.  
 email:  apryor6@gmail.com  

@@ -34,8 +34,8 @@ griddingMethod = GENFIRE_parameters.griddingMethod;
 allowMultipleGridMatches = GENFIRE_parameters.allowMultipleGridMatches;
 phaseErrorSigmaTolerance = GENFIRE_parameters.phaseErrorSigmaTolerance;
 constraintEnforcementDelayIndicators = GENFIRE_parameters.constraintEnforcementDelayIndicators;
-FourierGridSize = GENFIRE_parameters.FourierGridSize;
-userSetGridSize = GENFIRE_parameters.userSetGridSize;
+
+
 %%%   Begin Reconstruction   %%%
 
 if griddingMethod>2
@@ -44,6 +44,12 @@ end
 
 angles = single(importdata(filename_Angles));
 projections = single(importdata(filename_Projections));
+if ~GENFIRE_parameters.userSetGridSize
+   GENFIRE_parameters.FourierGridSize = [oversamplingRatio*size(projections,1), oversamplingRatio*size(projections,2), oversamplingRatio*size(projections,1)] 
+end
+FourierGridSize = GENFIRE_parameters.FourierGridSize;
+userSetGridSize = GENFIRE_parameters.userSetGridSize;
+
 
 %Initialize the initial object
 if filename_InitialModel
@@ -56,6 +62,12 @@ end
 
 global support %make support variable globally accessable to avoid passing copies of large arrays around to different functions
 support = single(importdata(filename_Support));
+
+if (GENFIRE_parameters.userSetGridSize)
+   if (size(support) ~= GENFIRE_parameters.FourierGridSize)
+      error('GENFIRE: Error! You have manually specified FourierGridSize, but the provided support has different dimensions.')
+   end
+end
 
 %get some values related to the size, center, etc of this array size
 % vecX = 1:size(support,1); ncX = round((size(support,1)+1)/2); vecX = vecX - ncX;

@@ -26,8 +26,8 @@ addpath ./data/
 
 filename_Projections = './data/projections.mat';
 filename_Angles = './data/angles.mat';
-filename_Support = './data/support180.mat'; 
-% filename_Support = './data/support.mat'; 
+% filename_Support = './data/support180.mat'; 
+filename_Support = './data/support.mat'; 
 % filename_Support = './data/support180_180_90.mat'; 
 % filename_Support = './data/support180_180_168.mat'; 
 
@@ -35,7 +35,7 @@ filename_Support = './data/support180.mat';
 filename_Results = './results/GENFIRE_rec180_gridOS25.mat';
 numIterations = 50; 
 pixelSize = .5; 
-oversamplingRatio =25;
+oversamplingRatio =3;
 griddingMethod = 1; 
 allowMultipleGridMatches = 1;
 constraintEnforcementMode = 1; 
@@ -51,10 +51,17 @@ percentValuesForRfree = 0.05;
 numBinsRfree = 35;
 doCTFcorrection = 0;
 CTFThrowOutThreshhold = 0;
-FourierGridSize = [180 180 180]; % manually input desired Fourier grid size or set to [] to automatically determine
-% FourierGridSize = [180 180 90]; % manually input desired Fourier grid size or set to [] to automatically determine
+
+useCustomGridSize = 0;
+% FourierGridSize = [180 180 180]; % manually input desired Fourier grid size or set to [] to automatically determine
+FourierGridSize = [180 180 90]; % manually input desired Fourier grid size or set to [] to automatically determine
 % FourierGridSize = [180 180 168]; % manually input desired Fourier grid size or set to [] to automatically determine
 % FourierGridSize = []; % manually input desired Fourier grid size or set to [] to automatically determine
+
+useCustomEulerConvention = 0;
+Euler_rot_vecs = {[0; 0; 1],[1; 1; 1],[0; 0; 1]};
+% Euler_rot_vecs = {[1;1;1], [0;2;0],[1;1;0]};
+
 
 
 
@@ -90,12 +97,21 @@ GENFIRE_parameters.oversamplingRatio = oversamplingRatio;
 GENFIRE_parameters.interpolationCutoffDistance = interpolationCutoffDistance;
 GENFIRE_parameters.constraintPositivity = constraintPositivity;
 GENFIRE_parameters.constraintSupport = constraintSupport;
-GENFIRE_parameters.FourierGridSize   = FourierGridSize;
-if ~isempty(FourierGridSize)
+if useCustomGridSize == 1
     GENFIRE_parameters.userSetGridSize = true;
+    GENFIRE_parameters.FourierGridSize   = FourierGridSize;
 else
     GENFIRE_parameters.userSetGridSize = false;
+    GENFIRE_parameters.FourierGridSize   = [];
 end
+
+if useCustomEulerConvention == 1
+    GENFIRE_parameters.Euler_rot_vecs = Euler_rot_vecs;
+else
+    GENFIRE_parameters.Euler_rot_vecs = {[0; 0; 1],[0; 1; 0],[0; 0; 1]};
+end
+GENFIRE_parameters.useCustomEulerConvention = useCustomEulerConvention;
+
 if exist('particleWindowSize','var')
     GENFIRE_parameters.particleWindowSize = particleWindowSize;
 else

@@ -209,10 +209,13 @@ psi = angles(projNum,3);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  GENFIRE/RELION/XMIPP/FREALIGN/EMAN Euler angle convention:
 % % 
-R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)*sind(phi)+sind(psi)*cosd(phi)   ,    -cosd(psi)*sind(theta);
-      -sind(psi)*cosd(theta)*cosd(phi)-cosd(psi)*sind(phi), -sind(psi)*cosd(theta)*sind(phi)+cosd(psi)*cosd(phi) ,   sind(psi)*sind(theta)  ;
-      sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];
-
+if GENFIRE_parameters.useCustomEulerConvention
+    R = (MatrixQuaternionRot(GENFIRE_parameters.Euler_rot_vecs{1}, phi) * MatrixQuaternionRot(GENFIRE_parameters.Euler_rot_vecs{2}, theta) * MatrixQuaternionRot(GENFIRE_parameters.Euler_rot_vecs{3}, psi))';
+else
+    R = [ cosd(psi)*cosd(theta)*cosd(phi)-sind(psi)*sind(phi) ,cosd(psi)*cosd(theta)*sind(phi)+sind(psi)*cosd(phi)   ,    -cosd(psi)*sind(theta);
+         -sind(psi)*cosd(theta)*cosd(phi)-cosd(psi)*sind(phi), -sind(psi)*cosd(theta)*sind(phi)+cosd(psi)*cosd(phi) ,   sind(psi)*sind(theta)  ;
+          sind(theta)*cosd(phi)                               , sind(theta)*sind(phi)                                ,              cosd(theta)];   
+end
 % rotkCoords = R'*[kx;ky;kz];%rotate coordinates
 rotkCoords = R'*[kx_proj;ky_proj;kz_proj];%rotate coordinates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -311,3 +314,16 @@ rec = real(my_ifft(measuredK));
 timeTakenToFillInGrid = toc;
 timeTakenToFillInGrid = round(10*timeTakenToFillInGrid)./10;
 fprintf('GENFIRE: Fourier grid assembled in %.12g seconds.\n\n',timeTakenToFillInGrid);
+end
+
+function dd = MatrixQuaternionRot(vector,theta)
+
+theta = theta*pi/180;
+vector = vector/sqrt(dot(vector,vector));
+w = cos(theta/2); x = -sin(theta/2)*vector(1); y = -sin(theta/2)*vector(2); z = -sin(theta/2)*vector(3);
+RotM = [1-2*y^2-2*z^2 2*x*y+2*w*z 2*x*z-2*w*y;
+      2*x*y-2*w*z 1-2*x^2-2*z^2 2*y*z+2*w*x;
+      2*x*z+2*w*y 2*y*z-2*w*x 1-2*x^2-2*y^2;];
+
+dd = RotM;
+end
