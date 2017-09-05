@@ -1,4 +1,4 @@
-#_Welcome to GENFIRE_
+# _Welcome to GENFIRE_ 
 
 Welcome to the MATLAB implementation of GENFIRE. 
 
