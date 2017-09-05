@@ -23,16 +23,20 @@ addpath ./data/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% See the README for description of parameters
+% 
+% filename_Projections = './data/projections.mat';
+% filename_Angles = './data/angles.mat';
 
-filename_Projections = './data/projections.mat';
-filename_Angles = './data/angles.mat';
+filename_Projections = '../pjs2.mat';
+filename_Angles = '../angle2.mat';
 % filename_Support = './data/support180.mat'; 
 filename_Support = './data/support.mat'; 
 % filename_Support = './data/support180_180_90.mat'; 
 % filename_Support = './data/support180_180_168.mat'; 
 
 % filename_InitialModel = '';
-filename_Results = './results/GENFIRE_rec180_gridOS25.mat';
+% filename_Results = './results/GENFIRE_rec180_gridOS25.mat';
+filename_Results = '../GENFIRE_rec2.mat';
 numIterations = 50; 
 pixelSize = .5; 
 oversamplingRatio =3;
@@ -53,14 +57,10 @@ doCTFcorrection = 0;
 CTFThrowOutThreshhold = 0;
 
 useCustomGridSize = 0;
-% FourierGridSize = [180 180 180]; % manually input desired Fourier grid size or set to [] to automatically determine
 FourierGridSize = [180 180 90]; % manually input desired Fourier grid size or set to [] to automatically determine
-% FourierGridSize = [180 180 168]; % manually input desired Fourier grid size or set to [] to automatically determine
-% FourierGridSize = []; % manually input desired Fourier grid size or set to [] to automatically determine
 
-useCustomEulerConvention = 0;
-Euler_rot_vecs = {[0; 0; 1],[1; 1; 1],[0; 0; 1]};
-% Euler_rot_vecs = {[1;1;1], [0;2;0],[1;1;0]};
+useCustomEulerConvention = 1;
+Euler_rot_vecs = {[0; 0; 1],[0; 1; 0],[0; 0; 1]};
 
 
 
