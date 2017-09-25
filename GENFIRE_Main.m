@@ -41,7 +41,7 @@ numIterations = 50;
 pixelSize = .5; 
 oversamplingRatio =3;
 griddingMethod = 1; 
-allowMultipleGridMatches = 1;
+allowMultipleGridMatches = 0;
 constraintEnforcementMode = 1; 
 % interpolationCutoffDistance =.7; interpolationCutoffDistance =.7; 
 % interpolationCutoffDistance =.7; 
